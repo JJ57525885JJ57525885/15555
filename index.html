@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DeepPet</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        @font-face {
+            font-family: 'WhaleCustomFont';
+            src: url('1.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #87CEEB;
+            font-family: sans-serif;
+            user-select: none;
+            touch-action: none;
+        }
+        #seafloor { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; background: #E8C97D; border-top: 10px solid #D4AF5A; z-index: 1; }
+        #whale-box { position: absolute; width: 200px; height: 240px; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; }
+        #whale-img { width: 200px; height: 200px; position: absolute; bottom: 0; left: 0; }
+        #hat-img { position: absolute; top: 48px; left: 42%; transform: translateX(-50%); font-size: 50px; z-index: 11; pointer-events: none; }
+        #whale-name-container { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 15; pointer-events: auto; cursor: pointer; text-align: center; }
+        #whale-name-text { font-family: 'WhaleCustomFont', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 22px; font-weight: bold; color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.4); transition: opacity 0.2s; white-space: nowrap; letter-spacing: 1px; }
+        #whale-name-text:hover { opacity: 0.8; }
+        #whale-name-input { display: none; font-family: 'WhaleCustomFont', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 20px; font-weight: bold; color: #fff; background: rgba(0,0,0,0.5); border: none; border-radius: 10px; padding: 4px 12px; text-align: center; outline: none; width: 160px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); letter-spacing: 1px; }
+        #whale-name-input.show { display: inline-block; }
+        #whale-name-text.hidden { display: none; }
+        #hud { position: absolute; top: 20px; left: 20px; width: 250px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; z-index: 100; }
+        .token-wrapper { display: flex; align-items: center; margin: 5px 0; }
+        .fatigue-label { color: white; font-size: 14px; margin-right: 8px; white-space: nowrap; }
+        #token-bar-bg { flex: 0 0 160px; height: 10px; background: #ddd; border-radius: 10px; overflow: hidden; margin: 0; }
+        #token-bar { height: 100%; width: 100%; background: #4CAF50; transition: width 0.3s; }
+        #token-percent { margin-left: 8px; font-size: 12px; color: white; font-weight: bold; white-space: nowrap; }
+        #status-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        #status { font-size: 14px; color: white; }
+        #currencies { display: flex; gap: 12px; font-size: 16px; }
+        #coins, #diamonds { color: gold; }
+        #countdown { color: #ffcc00; font-weight: bold; font-size: 16px; }
+        #controls { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; flex-wrap: wrap; justify-content: center; }
+        button { padding: 10px 12px; border: none; border-radius: 8px; background: #426EFE; color: white; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: background 0.2s, opacity 0.3s; }
+        button:hover { background: #5a7efe; }
+        button:disabled { background: #999; cursor: not-allowed; opacity: 0.5; box-shadow: none; }
+        #right-buttons { position: absolute; top: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 15px; }
+        #right-buttons button { width: 40px; height: 40px; padding: 0; border-radius: 50%; background: rgba(255,255,255,0.3); font-size: 18px; line-height: 40px; border: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(5px); color: white; cursor: pointer; }
+        #shop, #food-shop, #feed-panel, #settings-modal, #mod-manager-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        #shop.active, #food-shop.active, #feed-panel.active, #settings-modal.show, #mod-manager-modal.show { display: flex; }
+        .shop-header { position: absolute; top: 20px; right: 20px; font-size: 30px; cursor: pointer; color: white; }
+        #shop h3, #food-shop h3, #feed-panel h3, #settings-panel h2, #mod-manager-panel h2 { margin-top: 50px; font-size: 24px; color: white; margin-bottom: 20px; }
+        .hat-list, .food-list, .feed-list { width: 90%; max-width: 400px; margin-bottom: 40px; }
+        .hat-item, .food-item, .feed-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; }
+        .hat-info, .food-info, .feed-info { flex: 1; color: white; font-size: 14px; text-align: left; }
+        .hat-info .hat-name, .food-info .food-name, .feed-info .feed-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+        .hat-info .hat-desc, .food-info .food-desc, .feed-info .feed-desc { color: #ccc; font-size: 12px; }
+        .hat-item button, .food-item button, .feed-item button { margin-left: 10px; background: #426EFE; min-width: 60px; }
+        .feed-item button:disabled { background: #666; cursor: not-allowed; opacity: 0.6; }
+        #settings-panel, #mod-manager-panel { background: linear-gradient(145deg, #2c3e50, #1a252f); border-radius: 20px; padding: 30px 25px; width: 90%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative; box-sizing: border-box; border: 2px solid rgba(255,255,255,0.15); margin-top: 80px; }
+        #settings-close, #mod-manager-close { position: absolute; top: 12px; right: 16px; font-size: 24px; color: #aaa; cursor: pointer; transition: color 0.2s; background: none; border: none; padding: 0; line-height: 1; box-shadow: none; }
+        #settings-close:hover, #mod-manager-close:hover { color: white; background: none; box-shadow: none; }
+        .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; color: white; font-size: 15px; flex-wrap: wrap; gap: 8px; }
+        .setting-label { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+        .setting-label span { font-size: 18px; }
+        #volume-slider { width: 150px; accent-color: #426EFE; cursor: pointer; height: 6px; border-radius: 10px; }
+        #volume-value { min-width: 35px; text-align: right; font-weight: bold; color: #ffcc00; }
+        .music-toggle, .autosave-toggle { width: 50px; height: 26px; background: #555; border-radius: 15px; position: relative; cursor: pointer; transition: background 0.3s; flex-shrink: 0; }
+        .music-toggle.active, .autosave-toggle.active { background: #4CAF50; }
+        .music-toggle::after, .autosave-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: left 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .music-toggle.active::after, .autosave-toggle.active::after { left: 27px; }
+        .settings-divider { height: 1px; background: rgba(255,255,255,0.15); margin: 15px 0 20px; }
+        .settings-hint { color: #888; font-size: 11px; text-align: center; margin-top: 10px; }
+        .mod-list { width: 90%; max-width: 380px; margin-bottom: 20px; }
+        .mod-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+        .mod-info { flex: 1; color: white; font-size: 14px; }
+        .mod-buttons { display: flex; gap: 6px; }
+        .mod-buttons button { padding: 5px 10px; font-size: 12px; border-radius: 5px; min-width: auto; }
+        #mod-status { color: #ddd; font-size: 13px; text-align: center; margin-bottom: 10px; }
+        .bubble { position: absolute; bottom: -50px; border: 2px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.2); border-radius: 50%; animation: rise linear forwards; z-index: 2; pointer-events: none; }
+        @keyframes rise { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(-120vh); opacity: 0; } }
+        #pet-hand { position: absolute; font-size: 60px; pointer-events: auto; cursor: move; z-index: 200; display: none; touch-action: none; }
+        @media (orientation: landscape) { #controls { bottom: 20px; } #hud { top: 10px; left: 10px; transform: scale(0.9); transform-origin: top left; } }
+        #run-game { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, #87CEEB, #4A90E2); z-index: 99999; display: none; overflow: hidden; }
+        #difficulty-select { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(0,0,0,0.8); padding: 30px; border-radius: 15px; z-index: 10; max-width: 90%; }
+        #difficulty-select h2 { color: white; margin-top: 0; font-size: 20px; }
+        #difficulty-select button { margin: 8px 10px; padding: 15px 25px; font-size: 16px; background: #426EFE; min-width: 80px; }
+        #run-area { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+        .run-ground { position: absolute; bottom: 0; left: 0; width: 100%; height: 40px; background: #D4AF5A; z-index: 1; }
+        .run-player { position: absolute; width: 60px; height: 60px; left: 50px; bottom: 30px; z-index: 10; pointer-events: none; }
+        .spike { position: absolute; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 20px solid #555; bottom: 30px; z-index: 5; pointer-events: none; }
+        .coin { position: absolute; font-size: 26px; z-index: 5; pointer-events: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); animation: coinGlow 0.8s ease-in-out infinite alternate; }
+        @keyframes coinGlow { 0% { transform: scale(1); } 100% { transform: scale(1.15); filter: drop-shadow(0 2px 12px rgba(255,215,0,0.8)); } }
+        .chatgpt-enemy { position: absolute; width: 60px; height: 60px; bottom: 30px; z-index: 6; pointer-events: none; }
+        .run-ui { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.4); padding: 10px 20px; border-radius: 20px; color: white; font-weight: bold; font-size: 20px; z-index: 20; pointer-events: none; }
+        #run-exit { position: absolute; top: 20px; left: 20px; background: rgba(255,0,0,0.8); width: 40px; height: 40px; border-radius: 50%; z-index: 25; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.3); pointer-events: auto; }
+        #run-exit span { font-size: 20px; color: white; font-weight: bold; }
+        #instruction { position: absolute; bottom: 20px; width: 100%; text-align: center; color: white; font-weight: bold; z-index: 20; pointer-events: none; text-shadow: 1px 1px 2px black; font-size: 14px; }
+        #jump-btn { position: absolute; bottom: 80px; right: 30px; width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.35); border: 3px solid rgba(255,255,255,0.7); font-size: 36px; color: white; display: none; align-items: center; justify-content: center; z-index: 40; pointer-events: auto; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,0.3); backdrop-filter: blur(5px); user-select: none; transition: background 0.15s, transform 0.15s; }
+        #jump-btn:active { background: rgba(255,255,255,0.6); transform: scale(0.92); }
+        #jump-btn.show { display: flex; }
+        #game-over-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 30; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
+        #game-over-screen.show { display: flex; }
+        #game-over-screen h2 { color: white; font-size: 32px; margin-bottom: 10px; }
+        #game-over-screen p { color: #ffcc00; font-size: 24px; margin-bottom: 30px; }
+        #game-over-screen button { padding: 12px 30px; font-size: 18px; background: #426EFE; }
+        #revive-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 35; display: none; justify-content: center; align-items: center; pointer-events: auto; }
+        #revive-modal.show { display: flex; }
+        #revive-panel { background: white; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        #revive-panel h3 { margin: 0 0 10px; }
+        #revive-panel p { margin: 0 0 20px; font-size: 14px; }
+        #revive-panel button { margin: 0 8px; padding: 8px 20px; font-size: 14px; }
+        #feed-btn-top { position: absolute; top: 20px; left: 20px; background: #FF8C00; padding: 10px 18px; border-radius: 20px; font-size: 16px; z-index: 30; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    </style>
+</head>
+<body>
+    <div id="seafloor"></div>
+    <div id="whale-box">
+        <div id="hat-img"></div>
+        <div id="whale-name-container">
+            <span id="whale-name-text">DeepSeek</span>
+            <input id="whale-name-input" maxlength="12" placeholder="输入名字" autocomplete="off">
+        </div>
+        <img id="whale-img" src="1.gif" alt="虎鲸">
+    </div>
+    <div id="pet-hand">🤚🏻</div>
+    <div id="hud">
+        <div class="token-wrapper">
+            <span class="fatigue-label">疲劳值:</span>
+            <div id="token-bar-bg"><div id="token-bar"></div></div>
+            <span id="token-percent">100%</span>
+        </div>
+        <div id="status-row">
+            <div id="status">状态：正常开心</div>
+            <div id="currencies"><span id="coins">🪙：50</span><span id="diamonds">💎：0</span></div>
+        </div>
+        <div id="countdown"></div>
+    </div>
+
+    <div id="shop">
+        <div class="shop-header" onclick="toggleShop()">✖</div>
+        <h3>帽子装扮</h3>
+        <div class="hat-list">
+            <div class="hat-item"><div class="hat-info"><div class="hat-name">👑 皇冠 (30🪙)</div><div class="hat-desc">Token消耗速度减半</div></div><button id="hat-crown" onclick="buyOrWearHat('👑', 30, 'crown', this)">购买</button></div>
+            <div class="hat-item"><div class="hat-info"><div class="hat-name">🎩 礼帽 (20🪙)</div><div class="hat-desc">抚摸时增加3点Token</div></div><button id="hat-tophat" onclick="buyOrWearHat('🎩', 20, 'tophat', this)">购买</button></div>
+            <div class="hat-item"><div class="hat-info"><div class="hat-name">🎓 学士帽 (25🪙)</div><div class="hat-desc">抚摸时额外增加5点Token</div></div><button id="hat-grad" onclick="buyOrWearHat('🎓', 25, 'grad', this)">购买</button></div>
+            <div class="hat-item"><div class="hat-info"><div class="hat-name">👒 遮阳帽 (15🪙)</div><div class="hat-desc">抚摸时额外增加1🪙</div></div><button id="hat-sun" onclick="buyOrWearHat('👒', 15, 'sun', this)">购买</button></div>
+            <div class="hat-item"><div class="hat-info"><div class="hat-name">🧢 鸭舌帽 (10🪙)</div><div class="hat-desc">喂食时Token增加更多</div></div><button id="hat-cap" onclick="buyOrWearHat('🧢', 10, 'cap', this)">购买</button></div>
+        </div>
+    </div>
+
+    <div id="food-shop">
+        <div class="shop-header" onclick="toggleFoodShop()">✖</div>
+        <button id="feed-btn-top" onclick="openFeedPanel()">🍽️ 喂食</button>
+        <h3>🍽️ 食物商店</h3>
+        <div class="food-list">
+            <div style="color:white;margin-bottom:15px;text-align:center;">今日免费领取：<span id="free-apple-count">3</span> 个🍎</div>
+            <div class="food-item"><div class="food-info"><div class="food-name">🍎 苹果 (免费)</div><div class="food-desc">恢复体力</div></div><button id="btn-free-apple" onclick="claimFreeApple()">领取</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name">🐟 鱼 (20🪙)</div><div class="food-desc">美味可口</div></div><button onclick="buyFood('🐟', 20, 'coins', 30)">购买</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name">🍉 西瓜 (25🪙)</div><div class="food-desc">清凉解渴</div></div><button onclick="buyFood('🍉', 25, 'coins', 35)">购买</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name">🍔 汉堡 (30🪙)</div><div class="food-desc">高热量</div></div><button onclick="buyFood('🍔', 30, 'coins', 45)">购买</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name">🍞 面包 (10🪙)</div><div class="food-desc">简单充饥</div></div><button onclick="buyFood('🍞', 10, 'coins', 15)">购买</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name">🍯 蜂蜜 (5💎)</div><div class="food-desc">珍贵营养</div></div><button onclick="buyFood('🍯', 5, 'diamonds', 50)">购买</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name">🍰 蛋糕 (10💎)</div><div class="food-desc">豪华大餐</div></div><button onclick="buyFood('🍰', 10, 'diamonds', 65)">购买</button></div>
+        </div>
+    </div>
+
+    <div id="feed-panel">
+        <div class="shop-header" onclick="closeFeedPanel()">✖</div>
+        <h3>🥄 选择食物喂食</h3>
+        <div class="feed-list" id="feed-list"></div>
+    </div>
+
+    <div id="settings-modal">
+        <div id="settings-panel">
+            <button id="settings-close" onclick="closeSettings()">✖</button>
+            <h2>⚙️ 设置</h2>
+            <div class="setting-row">
+                <div class="setting-label"><span>🔊</span> 音量调节</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1">
+                    <span id="volume-value">100%</span>
+                </div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-label"><span>🎵</span> 背景音乐</div>
+                <div class="music-toggle" id="music-toggle" onclick="toggleMusic()"></div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-label"><span>💾</span> 自动保存</div>
+                <div class="autosave-toggle" id="autosave-toggle" onclick="toggleAutoSave()"></div>
+            </div>
+            <div class="settings-divider"></div>
+            <div class="setting-row" style="justify-content:center; gap: 10px;">
+                <button onclick="saveGame(); closeSettings();" style="background:#4CAF50;padding:8px 20px;">💾 保存</button>
+                <button onclick="exitGame()" style="background:#f44336;padding:8px 20px;">🚪 退出</button>
+            </div>
+            <div class="setting-row" style="justify-content:center;">
+                <button onclick="openModManager()" style="background:#8e44ad;padding:8px 20px;">🧩 模组管理</button>
+            </div>
+            <div class="settings-hint">点击虎鲸头顶的名字可以直接修改</div>
+        </div>
+    </div>
+
+    <div id="mod-manager-modal">
+        <div id="mod-manager-panel">
+            <button id="mod-manager-close" onclick="closeModManager()">✖</button>
+            <h2>🧩 模组管理</h2>
+            <div id="mod-status">当前未装备任何模组</div>
+            <div class="setting-row">
+                <button id="mod-upload-btn" onclick="document.getElementById('mod-file-input').click()" style="background:#3498db;">📁 上传ZIP模组</button>
+                <input type="file" id="mod-file-input" accept=".zip" style="display:none" onchange="handleModUpload(event)">
+            </div>
+            <div class="mod-list" id="mod-list"></div>
+            <div class="settings-hint">ZIP需包含：1.gif, 1.png~7.png, 1.mp3, 1.woff2。缺少的文件将使用默认资源。</div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button class="game-btn" id="btn-food" onclick="toggleFoodShop()">🍎 食物</button>
+        <button class="game-btn" id="btn-pet" onclick="pet()">🤚 抚摸</button>
+        <button class="game-btn" id="btn-lift" onclick="lift()">🏋 锻炼</button>
+        <button class="game-btn" id="btn-shop" onclick="toggleShop()">🎩 装扮</button>
+        <button class="game-btn" id="btn-run" onclick="openRunGame()">🏃 跑酷</button>
+    </div>
+    <div id="right-buttons">
+        <button onclick="openSettings()" title="设置">⚙️</button>
+    </div>
+
+    <audio id="bgm" loop preload="none"><source src="1.mp3" type="audio/mpeg"></audio>
+
+    <div id="run-game">
+        <div id="difficulty-select">
+            <h2>选择难度</h2>
+            <button onclick="startRunGame('easy')">简单</button>
+            <button onclick="startRunGame('normal')">普通</button>
+            <button onclick="startRunGame('hard')">困难</button>
+        </div>
+        <div id="run-area"><div class="run-ground"></div></div>
+        <div id="run-exit" onclick="closeRunGame()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"><span>✖</span></div>
+        <div id="run-ui" class="run-ui">钻石：0</div>
+        <div id="instruction">点击⬆按钮或按空格跳跃</div>
+        <div id="jump-btn" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="triggerJump()">⬆</div>
+        <div id="game-over-screen">
+            <h2>游戏结束</h2>
+            <p id="final-score">获得钻石：0</p>
+            <button onclick="restartRun()">🔄 重新开始</button>
+        </div>
+        <div id="revive-modal">
+            <div id="revive-panel">
+                <h3>💎 复活机会</h3>
+                <p>消耗 10 颗钻石可以立即复活！<br>当前钻石：<span id="revive-diamonds">0</span></p>
+                <button onclick="useRevive()" style="background:#4CAF50;">复活 (消耗10💎)</button>
+                <button onclick="giveUpRevive()" style="background:#f44336;">放弃</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ 全局变量 ============
+        var token = 100;
+        var coins = 50;
+        var diamonds = 0;
+        var whaleName = 'DeepSeek';
+        var currentHat = '';
+        var hatType = '';
+        var ownedHats = {};
+        var foodInventory = {};
+        var isSleeping = false;
+        var isSad = false;
+        var isPetting = false;
+        var petTimer, sleepTimer, intervalTimer;
+        var actionLocked = false;
+        var actionLockTimer = null;
+        var autoSaveEnabled = false;
+        var autoSaveInterval = null;
+        const AUTO_SAVE_DELAY = 30000;
+        var freeAppleCount = 3;
+        var lastFreeDate = '';
+
+        // 模组列表相关
+        var modList = [];
+        var currentModId = null;
+        var modBlobUrls = {};
+        var modFontStyleTag = null;
+
+        var whaleImg = document.getElementById('whale-img');
+        var tokenBar = document.getElementById('token-bar');
+        var tokenPercent = document.getElementById('token-percent');
+        var statusText = document.getElementById('status');
+        var countdownText = document.getElementById('countdown');
+        var coinText = document.getElementById('coins');
+        var diamondText = document.getElementById('diamonds');
+        var hatImg = document.getElementById('hat-img');
+        var petHand = document.getElementById('pet-hand');
+        var shop = document.getElementById('shop');
+        var foodShop = document.getElementById('food-shop');
+        var feedPanel = document.getElementById('feed-panel');
+        var feedList = document.getElementById('feed-list');
+        var settingsModal = document.getElementById('settings-modal');
+        var volumeSlider = document.getElementById('volume-slider');
+        var volumeValue = document.getElementById('volume-value');
+        var musicToggle = document.getElementById('music-toggle');
+        var autosaveToggle = document.getElementById('autosave-toggle');
+        var whaleNameText = document.getElementById('whale-name-text');
+        var whaleNameInput = document.getElementById('whale-name-input');
+        var isMusicOn = false;
+        var runGame = document.getElementById('run-game');
+        var runArea = document.getElementById('run-area');
+        var difficultySelect = document.getElementById('difficulty-select');
+        var runUI = document.getElementById('run-ui');
+        var gameOverScreen = document.getElementById('game-over-screen');
+        var finalScore = document.getElementById('final-score');
+        var reviveModal = document.getElementById('revive-modal');
+        var reviveDiamonds = document.getElementById('revive-diamonds');
+        var jumpBtn = document.getElementById('jump-btn');
+        var runPlayer, runVelocity, runGravity, runIsJumping;
+        var spikeSpeed, obstacleTimer, enemyTimer;
+        var currentDifficulty, runScore, isRunActive;
+        var animationFrameId;
+        var lastDifficulty = 'easy';
+        var isInvincible = false;
+        var revivePending = false;
+        var gameButtons = document.querySelectorAll('.game-btn');
+        var bgm = document.getElementById('bgm');
+        var modManagerModal = document.getElementById('mod-manager-modal');
+        var modStatus = document.getElementById('mod-status');
+
+        // ============ 初始化 ============
+        loadGame();
+        initSettings();
+        checkFreeAppleReset();
+        updateUI();
+        updateWhaleNameDisplay();
+        startAutoConsume();
+        renderFeedList();
+        initNameEditor();
+        loadModsFromDB();
+
+        // ============ 资源 URL 获取函数 ============
+        function getAssetUrl(filename) {
+            if (modBlobUrls[filename]) return modBlobUrls[filename];
+            return filename;
+        }
+
+        // ============ 模组管理（列表版） ============
+        const MOD_DB_NAME = 'whale-mod-db-v2';
+        const MOD_STORE_NAME = 'mod-list';
+
+        function openModDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(MOD_DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(MOD_STORE_NAME)) {
+                        db.createObjectStore(MOD_STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function saveModListToDB() {
+            const db = await openModDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(MOD_STORE_NAME, 'readwrite');
+                const store = tx.objectStore(MOD_STORE_NAME);
+                store.clear();
+                for (const mod of modList) {
+                    store.put(mod);
+                }
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function loadModListFromDB() {
+            const db = await openModDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(MOD_STORE_NAME, 'readonly');
+                const store = tx.objectStore(MOD_STORE_NAME);
+                const req = store.getAll();
+                req.onsuccess = () => resolve(req.result || []);
+                req.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        function applyModAssets(assets) {
+            for (let key in modBlobUrls) URL.revokeObjectURL(modBlobUrls[key]);
+            modBlobUrls = {};
+            if (assets) {
+                for (let filename in assets) modBlobUrls[filename] = URL.createObjectURL(assets[filename]);
+            }
+            if (modFontStyleTag) { modFontStyleTag.remove(); modFontStyleTag = null; }
+            if (modBlobUrls['1.woff2']) {
+                const style = document.createElement('style');
+                style.textContent = `@font-face { font-family: 'WhaleCustomFont'; src: url('${modBlobUrls['1.woff2']}') format('woff2'); font-weight: normal; font-style: normal; font-display: swap; }`;
+                document.head.appendChild(style);
+                modFontStyleTag = style;
+            }
+            applyAllAssetUrls();
+        }
+
+        function applyAllAssetUrls() {
+            whaleImg.src = getAssetUrl('1.gif');
+            const source = bgm.querySelector('source');
+            source.src = getAssetUrl('1.mp3');
+            bgm.load();
+            if (runPlayer) runPlayer.src = getAssetUrl('7.png');
+        }
+
+        async function equipModById(id) {
+            if (currentModId !== null) {
+                const oldMod = modList.find(m => m.id === currentModId);
+                if (oldMod) oldMod.equipped = false;
+                currentModId = null;
+                applyModAssets(null);
+            }
+            if (id !== null) {
+                const mod = modList.find(m => m.id === id);
+                if (!mod) return;
+                mod.equipped = true;
+                currentModId = id;
+                applyModAssets(mod.assets);
+            }
+            await saveModListToDB();
+            renderModList();
+            updateModStatus();
+        }
+
+        async function deleteModById(id) {
+            const index = modList.findIndex(m => m.id === id);
+            if (index === -1) return;
+            if (currentModId === id) {
+                await equipModById(null);
+            }
+            modList.splice(index, 1);
+            await saveModListToDB();
+            renderModList();
+            updateModStatus();
+        }
+
+        function renderModList() {
+            const listElement = document.getElementById('mod-list');
+            if (!listElement) return;
+            if (modList.length === 0) {
+                listElement.innerHTML = '<div style="color:#aaa;text-align:center;padding:20px;">暂无模组，请上传ZIP文件</div>';
+                return;
+            }
+            let html = '';
+            for (const mod of modList) {
+                const isEquipped = (mod.id === currentModId);
+                html += `<div class="mod-item">
+                    <div class="mod-info">${mod.name || '未命名模组'}</div>
+                    <div class="mod-buttons">
+                        <button onclick="equipModById('${mod.id}')" style="background:${isEquipped ? '#e67e22' : '#2ecc71'};">${isEquipped ? '卸下' : '装备'}</button>
+                        <button onclick="deleteModById('${mod.id}')" style="background:#e74c3c;">删除</button>
+                    </div>
+                </div>`;
+            }
+            listElement.innerHTML = html;
+        }
+
+        function updateModStatus() {
+            if (!modStatus) return;
+            if (currentModId !== null) {
+                const mod = modList.find(m => m.id === currentModId);
+                modStatus.textContent = `当前装备：${mod ? mod.name : '自定义模组'}`;
+            } else {
+                modStatus.textContent = '当前未装备任何模组';
+            }
+        }
+
+        function handleModUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const zip = new JSZip();
+            zip.loadAsync(file).then(async (zipContent) => {
+                const requiredFiles = ['1.gif', '1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '1.mp3', '1.woff2'];
+                const assets = {};
+                for (let filename of requiredFiles) {
+                    const fileEntry = zipContent.file(filename);
+                    if (fileEntry) {
+                        const blob = await fileEntry.async('blob');
+                        assets[filename] = blob;
+                    }
+                }
+                if (Object.keys(assets).length === 0) {
+                    alert('ZIP 中未找到任何可用的资源文件！');
+                    return;
+                }
+                const newMod = {
+                    id: 'mod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    name: file.name.replace(/\.zip$/i, '') || '自定义模组',
+                    assets: assets,
+                    equipped: false
+                };
+                modList.push(newMod);
+                await saveModListToDB();
+                renderModList();
+                updateModStatus();
+                alert('模组上传成功！已添加到列表');
+            }).catch(err => {
+                alert('ZIP 解析失败：' + err.message);
+            });
+            event.target.value = '';
+        }
+
+        async function loadModsFromDB() {
+            try {
+                modList = await loadModListFromDB();
+                const equippedMod = modList.find(m => m.equipped);
+                if (equippedMod) {
+                    currentModId = equippedMod.id;
+                    applyModAssets(equippedMod.assets);
+                } else {
+                    currentModId = null;
+                    applyModAssets(null);
+                }
+                renderModList();
+                updateModStatus();
+            } catch (e) {
+                console.warn('加载模组列表失败', e);
+                renderModList();
+                updateModStatus();
+            }
+        }
+
+        function openModManager() {
+            modManagerModal.classList.add('show');
+            settingsModal.classList.remove('show');
+            renderModList();
+            updateModStatus();
+        }
+
+        function closeModManager() {
+            modManagerModal.classList.remove('show');
+            settingsModal.classList.add('show');
+        }
+
+        // ============ 按钮冷却 ============
+        function lockButtons(duration) {
+            actionLocked = true;
+            setAllGameButtonsDisabled(true);
+            if (actionLockTimer) clearTimeout(actionLockTimer);
+            actionLockTimer = setTimeout(function() {
+                actionLocked = false;
+                setAllGameButtonsDisabled(false);
+            }, duration);
+        }
+
+        function setAllGameButtonsDisabled(disabled) {
+            for (var i = 0; i < gameButtons.length; i++) gameButtons[i].disabled = disabled;
+        }
+
+        function isLocked() { return actionLocked; }
+
+        function openSettings() { settingsModal.classList.add('show'); modManagerModal.classList.remove('show'); }
+        function closeSettings() { settingsModal.classList.remove('show'); }
+
+        function initSettings() {
+            volumeSlider.value = bgm.volume || 1;
+            volumeValue.textContent = Math.round(volumeSlider.value * 100) + '%';
+            volumeSlider.oninput = function() {
+                bgm.volume = parseFloat(this.value);
+                volumeValue.textContent = Math.round(this.value * 100) + '%';
+            };
+            updateMusicToggleUI();
+            updateAutoSaveToggleUI();
+        }
+
+        function toggleMusic() {
+            if (isMusicOn) { bgm.pause(); isMusicOn = false; }
+            else { bgm.play().then(() => { isMusicOn = true; updateMusicToggleUI(); }).catch(() => { isMusicOn = false; updateMusicToggleUI(); }); }
+            updateMusicToggleUI();
+        }
+
+        function updateMusicToggleUI() { musicToggle.classList.toggle('active', isMusicOn); }
+
+        function toggleAutoSave() {
+            autoSaveEnabled = !autoSaveEnabled;
+            updateAutoSaveToggleUI();
+            if (autoSaveEnabled) { saveGame(true); autoSaveInterval = setInterval(() => saveGame(true), AUTO_SAVE_DELAY); }
+            else { clearInterval(autoSaveInterval); autoSaveInterval = null; }
+        }
+
+        function updateAutoSaveToggleUI() { autosaveToggle.classList.toggle('active', autoSaveEnabled); }
+        settingsModal.addEventListener('click', function(e) { if (e.target === settingsModal) closeSettings(); });
+        modManagerModal.addEventListener('click', function(e) { if (e.target === modManagerModal) closeModManager(); });
+
+        function updateWhaleNameDisplay() {
+            whaleNameText.textContent = whaleName;
+        }
+
+        function initNameEditor() {
+            whaleNameText.addEventListener('click', function() {
+                whaleNameText.classList.add('hidden');
+                whaleNameInput.classList.add('show');
+                whaleNameInput.value = whaleName;
+                whaleNameInput.focus();
+                whaleNameInput.select();
+            });
+            whaleNameInput.addEventListener('blur', function() { saveNameFromInput(); });
+            whaleNameInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') whaleNameInput.blur();
+                if (e.key === 'Escape') whaleNameInput.blur();
+            });
+            whaleNameInput.addEventListener('touchstart', function(e) { e.stopPropagation(); });
+            whaleNameText.addEventListener('touchstart', function(e) {
+                e.stopPropagation();
+                whaleNameText.classList.add('hidden');
+                whaleNameInput.classList.add('show');
+                whaleNameInput.value = whaleName;
+                whaleNameInput.focus();
+                whaleNameInput.select();
+                if (e.cancelable) e.preventDefault();
+            });
+        }
+
+        function saveNameFromInput() {
+            var newName = whaleNameInput.value.trim();
+            if (newName && newName.length > 0) whaleName = newName;
+            whaleNameInput.classList.remove('show');
+            whaleNameText.classList.remove('hidden');
+            updateWhaleNameDisplay();
+            saveGame(true);
+        }
+
+        function exitGame() {
+            if (confirm('确定要退出游戏吗？')) { try { window.close(); } catch (e) { alert('请手动关闭窗口'); } }
+        }
+
+        function saveGame(silent) {
+            var saveData = {
+                token: token,
+                coins: coins,
+                diamonds: diamonds,
+                whaleName: whaleName,
+                currentHat: currentHat,
+                hatType: hatType,
+                ownedHats: ownedHats,
+                foodInventory: foodInventory,
+                autoSaveEnabled: autoSaveEnabled,
+                freeAppleCount: freeAppleCount,
+                lastFreeDate: lastFreeDate
+            };
+            localStorage.setItem('whaleGameSave', JSON.stringify(saveData));
+            if (!silent) alert('保存成功！');
+        }
+
+        function loadGame() {
+            var saved = localStorage.getItem('whaleGameSave');
+            if (saved) {
+                try {
+                    var data = JSON.parse(saved);
+                    token = data.token !== undefined ? data.token : 100;
+                    coins = data.coins !== undefined ? data.coins : 50;
+                    diamonds = data.diamonds !== undefined ? data.diamonds : 0;
+                    whaleName = data.whaleName || 'DeepSeek';
+                    currentHat = data.currentHat || '';
+                    hatType = data.hatType || '';
+                    ownedHats = data.ownedHats || {};
+                    foodInventory = data.foodInventory || {};
+                    autoSaveEnabled = data.autoSaveEnabled || false;
+                    freeAppleCount = data.freeAppleCount !== undefined ? data.freeAppleCount : 3;
+                    lastFreeDate = data.lastFreeDate || '';
+                    if (currentHat) hatImg.innerHTML = currentHat;
+                    var hatButtons = document.querySelectorAll('.hat-item button');
+                    for (var i = 0; i < hatButtons.length; i++) {
+                        var btn = hatButtons[i];
+                        var emoji = btn.id.replace('hat-', '');
+                        var map = { crown: '👑', tophat: '🎩', grad: '🎓', sun: '👒', cap: '🧢' };
+                        if (ownedHats[map[emoji]]) btn.innerHTML = (currentHat === map[emoji]) ? '已装扮' : '装扮';
+                    }
+                } catch (e) { console.log('加载失败'); }
+            }
+            if (autoSaveEnabled) autoSaveInterval = setInterval(() => saveGame(true), AUTO_SAVE_DELAY);
+        }
+
+        function checkFreeAppleReset() {
+            var today = new Date().toDateString();
+            if (lastFreeDate !== today) {
+                freeAppleCount = 3;
+                lastFreeDate = today;
+                saveGame(true);
+            }
+            document.getElementById('free-apple-count').textContent = freeAppleCount;
+        }
+
+        function claimFreeApple() {
+            if (isLocked()) return;
+            checkFreeAppleReset();
+            if (freeAppleCount <= 0) { alert('今日免费苹果已领完！'); return; }
+            freeAppleCount--;
+            document.getElementById('free-apple-count').textContent = freeAppleCount;
+            foodInventory['🍎'] = (foodInventory['🍎'] || 0) + 1;
+            renderFeedList();
+            updateUI();
+            saveGame(true);
+            lockButtons(800);
+            alert('获得了一个🍎！已放入食物背包');
+        }
+
+        function toggleFoodShop() {
+            if (foodShop.classList.contains('active')) {
+                foodShop.classList.remove('active');
+                setAllGameButtonsDisabled(false);
+            } else {
+                foodShop.classList.add('active');
+                setAllGameButtonsDisabled(true);
+                checkFreeAppleReset();
+                renderFeedList();
+            }
+        }
+
+        function buyFood(emoji, price, currency, gain) {
+            if (isLocked()) return;
+            if (currency === 'coins' && coins < price) { alert('金币不足！'); return; }
+            if (currency === 'diamonds' && diamonds < price) { alert('钻石不足！'); return; }
+            if (currency === 'coins') coins -= price;
+            else diamonds -= price;
+            foodInventory[emoji] = (foodInventory[emoji] || 0) + 1;
+            updateUI();
+            renderFeedList();
+            saveGame(true);
+            lockButtons(600);
+            alert('购买了 ' + emoji + '！已放入背包');
+        }
+
+        function openFeedPanel() {
+            renderFeedList();
+            feedPanel.classList.add('active');
+        }
+
+        function closeFeedPanel() { feedPanel.classList.remove('active'); }
+
+        function renderFeedList() {
+            var foods = {
+                '🍎': { name: '苹果', gain: 25 },
+                '🐟': { name: '鱼', gain: 30 },
+                '🍉': { name: '西瓜', gain: 35 },
+                '🍔': { name: '汉堡', gain: 45 },
+                '🍞': { name: '面包', gain: 15 },
+                '🍯': { name: '蜂蜜', gain: 50 },
+                '🍰': { name: '蛋糕', gain: 65 }
+            };
+            var html = '';
+            for (var emoji in foods) {
+                var count = foodInventory[emoji] || 0;
+                html += '<div class="feed-item"><div class="feed-info"><div class="feed-name">' + emoji + ' ' + foods[emoji].name + ' ×' + count + '</div><div class="feed-desc">恢复体力</div></div>';
+                if (count > 0) html += '<button onclick="feedWhale(\'' + emoji + '\',' + foods[emoji].gain + ')">喂食</button>';
+                else html += '<button disabled>无</button>';
+                html += '</div>';
+            }
+            feedList.innerHTML = html;
+        }
+
+        function feedWhale(emoji, gain) {
+            if (isLocked()) return;
+            if (!foodInventory[emoji] || foodInventory[emoji] <= 0) { alert('没有这个食物！'); return; }
+            if (isSleeping) { alert('服务器繁忙，无法喂食！'); return; }
+            foodInventory[emoji]--;
+            var finalGain = gain;
+            if (hatType === 'cap') finalGain += 5;
+            token = Math.min(100, token + finalGain);
+            updateUI();
+            checkState();
+            renderFeedList();
+            saveGame(true);
+            lockButtons(1000);
+        }
+
+        function pet() {
+            if (isSleeping || isPetting || isLocked()) return;
+            lockButtons(10000);
+            isPetting = true;
+            whaleImg.src = getAssetUrl("5.png");
+            petHand.style.display = 'block';
+            petHand.style.left = '50%';
+            petHand.style.top = '50%';
+            var isDragging = false;
+            petHand.onmousedown = function(e) { isDragging = true; moveHand(e.clientX, e.clientY); return false; };
+            petHand.ontouchstart = function(e) { isDragging = true; var t = e.touches[0]; moveHand(t.clientX, t.clientY); return false; };
+            document.onmousemove = function(e) { if (isDragging) moveHand(e.clientX, e.clientY); };
+            document.ontouchmove = function(e) { if (isDragging) { var t = e.touches[0]; moveHand(t.clientX, t.clientY); } };
+            document.onmouseup = function() { isDragging = false; };
+            document.ontouchend = function() { isDragging = false; };
+            function moveHand(x, y) { petHand.style.left = x + 'px'; petHand.style.top = y + 'px'; }
+            var bonusTimer = setInterval(function() {
+                var bonus = (hatType === 'tophat') ? 3 : 1;
+                if (hatType === 'grad') bonus += 5;
+                if (hatType === 'sun') coins += 1;
+                token += bonus;
+                coins += 1;
+                if (token > 100) token = 100;
+                updateUI();
+            }, 1000);
+            clearTimeout(petTimer);
+            petTimer = setTimeout(function() {
+                document.onmousemove = null;
+                document.ontouchmove = null;
+                document.onmouseup = null;
+                document.ontouchend = null;
+                clearInterval(bonusTimer);
+                isPetting = false;
+                petHand.style.display = 'none';
+                checkState();
+            }, 10000);
+        }
+
+        function lift() {
+            if (isSleeping || token < 15 || isLocked()) return;
+            lockButtons(1500);
+            token -= 15;
+            whaleImg.src = getAssetUrl("1.png");
+            updateUI();
+            statusText.innerHTML = "状态：正在疯狂举铁！";
+            setTimeout(() => checkState(), 1000);
+        }
+
+        function checkState() {
+            updateUI();
+            if (token <= 0) { startServerError(); return; }
+            if (token <= 20) { isSad = true; whaleImg.src = getAssetUrl("4.png"); statusText.innerHTML = "状态：饿得伤心了..."; }
+            else if (token <= 50) { isSad = false; whaleImg.src = getAssetUrl("3.png"); statusText.innerHTML = "状态：举铁太累，流汗了"; }
+            else if (!isPetting) { isSad = false; whaleImg.src = getAssetUrl("1.gif"); statusText.innerHTML = "状态：正常开心"; }
+        }
+
+        function startServerError() {
+            isSleeping = true;
+            token = 0;
+            whaleImg.src = getAssetUrl("2.png");
+            statusText.innerHTML = "状态：服务器繁忙！";
+            setAllGameButtonsDisabled(true);
+            var timeLeft = 60;
+            countdownText.innerHTML = "重启冷却中：剩余 " + timeLeft + " 秒";
+            clearInterval(sleepTimer);
+            sleepTimer = setInterval(function() {
+                timeLeft--;
+                countdownText.innerHTML = "重启冷却中：剩余 " + timeLeft + " 秒";
+                if (timeLeft <= 0) {
+                    clearInterval(sleepTimer);
+                    isSleeping = false;
+                    token = 100;
+                    countdownText.innerHTML = "";
+                    setAllGameButtonsDisabled(false);
+                    checkState();
+                }
+            }, 1000);
+        }
+
+        function updateUI() {
+            tokenBar.style.width = Math.max(0, token) + "%";
+            tokenPercent.innerHTML = Math.round(token) + "%";
+            tokenBar.style.background = token > 50 ? "#4CAF50" : token > 20 ? "#ff9800" : "#f44336";
+            coinText.innerHTML = "🪙：" + coins;
+            diamondText.innerHTML = "💎：" + diamonds;
+        }
+
+        function toggleShop() {
+            if (shop.classList.contains('active')) { shop.classList.remove('active'); setAllGameButtonsDisabled(false); }
+            else { shop.classList.add('active'); setAllGameButtonsDisabled(true); }
+        }
+
+        function buyOrWearHat(emoji, price, type, btn) {
+            if (ownedHats[emoji]) {
+                if (currentHat === emoji) {
+                    currentHat = '';
+                    hatType = '';
+                    hatImg.innerHTML = '';
+                    btn.innerHTML = '装扮';
+                } else {
+                    currentHat = emoji;
+                    hatType = type;
+                    hatImg.innerHTML = emoji;
+                    btn.innerHTML = '已装扮';
+                    var allBtns = document.querySelectorAll('.hat-item button');
+                    for (var i = 0; i < allBtns.length; i++)
+                        if (allBtns[i] !== btn && allBtns[i].innerHTML === '已装扮') allBtns[i].innerHTML = '装扮';
+                }
+                startAutoConsume();
+            } else {
+                if (coins < price) { alert('金币不足！'); return; }
+                coins -= price;
+                ownedHats[emoji] = true;
+                btn.innerHTML = '装扮';
+                updateUI();
+            }
+        }
+
+        function createBubble() {
+            var bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            var size = Math.random() * 20 + 5;
+            bubble.style.width = size + 'px';
+            bubble.style.height = size + 'px';
+            bubble.style.left = Math.random() * 100 + 'vw';
+            var duration = Math.random() * 10 + 5;
+            bubble.style.animationDuration = duration + 's';
+            document.body.appendChild(bubble);
+            setTimeout(() => bubble.remove(), duration * 1000);
+        }
+        setInterval(createBubble, 500);
+
+        function startAutoConsume() {
+            clearInterval(intervalTimer);
+            intervalTimer = setInterval(function() {
+                if (!isSleeping && !isPetting) {
+                    var consume = (hatType === 'crown') ? 0.5 : 1;
+                    token -= consume;
+                    checkState();
+                }
+            }, 10000);
+        }
+
+        function openRunGame() {
+            runGame.style.display = 'block';
+            difficultySelect.style.display = 'block';
+            runArea.innerHTML = '<div class="run-ground"></div>';
+            runUI.innerHTML = '钻石：0';
+            gameOverScreen.classList.remove('show');
+            reviveModal.classList.remove('show');
+            jumpBtn.classList.remove('show');
+            isRunActive = false;
+            revivePending = false;
+            setAllGameButtonsDisabled(true);
+        }
+
+        function closeRunGame() {
+            runGame.style.display = 'none';
+            isRunActive = false;
+            clearInterval(obstacleTimer);
+            clearInterval(enemyTimer);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            document.onkeydown = null;
+            jumpBtn.classList.remove('show');
+            setAllGameButtonsDisabled(false);
+        }
+
+        function startRunGame(diff) {
+            lastDifficulty = diff;
+            difficultySelect.style.display = 'none';
+            runArea.innerHTML = '<div class="run-ground"></div>';
+            runUI.innerHTML = '钻石：0';
+            gameOverScreen.classList.remove('show');
+            reviveModal.classList.remove('show');
+            jumpBtn.classList.add('show');
+            currentDifficulty = diff;
+            runScore = 0;
+            isRunActive = true;
+            isInvincible = false;
+            revivePending = false;
+            runPlayer = document.createElement('img');
+            runPlayer.src = getAssetUrl('7.png');
+            runPlayer.className = 'run-player';
+            runArea.appendChild(runPlayer);
+            runVelocity = 0;
+            runGravity = 0.8;
+            runIsJumping = false;
+            clearInterval(obstacleTimer);
+            clearInterval(enemyTimer);
+            if (diff === 'easy') { spikeSpeed = 4; obstacleTimer = setInterval(createObstacle, 2200); }
+            else if (diff === 'normal') { spikeSpeed = 6; obstacleTimer = setInterval(createObstacle, 1600); }
+            else { spikeSpeed = 8; obstacleTimer = setInterval(createObstacle, 1400); enemyTimer = setInterval(createChatGPTEnemy, 8000); }
+            document.onkeydown = handleJump;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function triggerJump() { if (isRunActive && !revivePending && !runIsJumping) { runVelocity = 12; runIsJumping = true; } }
+        function handleJump(e) { if (e.keyCode !== 32) return; triggerJump(); e.preventDefault(); }
+
+        function gameLoop() {
+            if (!isRunActive) return;
+            if (!revivePending) {
+                runVelocity += -0.8;
+                var playerY = parseInt(runPlayer.style.bottom || '30');
+                playerY += runVelocity;
+                if (playerY <= 30) { playerY = 30; runVelocity = 0; runIsJumping = false; }
+                runPlayer.style.bottom = playerY + 'px';
+                var obstacles = document.querySelectorAll('.spike, .coin, .chatgpt-enemy');
+                for (var i = 0; i < obstacles.length; i++) {
+                    var obj = obstacles[i];
+                    var left = parseFloat(obj.style.left) || 0;
+                    left -= spikeSpeed * (obj.className === 'coin' ? 0.8 : 1);
+                    obj.style.left = left + 'px';
+                    if (!isInvincible) {
+                        var playerRect = runPlayer.getBoundingClientRect();
+                        var objRect = obj.getBoundingClientRect();
+                        if (obj.className === 'spike') { var sx = objRect.width * 0.2, sy = objRect.height * 0.2; objRect = { left: objRect.left + sx, right: objRect.right - sx, top: objRect.top + sy, bottom: objRect.bottom - sy }; }
+                        var collision = !(playerRect.right < objRect.left || playerRect.left > objRect.right || playerRect.bottom < objRect.top || playerRect.top > objRect.bottom);
+                        if (collision) {
+                            if (obj.className === 'coin') { obj.remove(); runScore += 1; diamonds += 1; updateUI(); runUI.innerHTML = '钻石：' + diamonds; }
+                            else { if (diamonds >= 10) { revivePending = true; reviveDiamonds.textContent = diamonds; reviveModal.classList.add('show'); } else { gameOver(); } return; }
+                        }
+                    } else {
+                        if (obj.className === 'coin') { var playerRect2 = runPlayer.getBoundingClientRect(); var objRect2 = obj.getBoundingClientRect(); if (!(playerRect2.right < objRect2.left || playerRect2.left > objRect2.right || playerRect2.bottom < objRect2.top || playerRect2.top > objRect2.bottom)) { obj.remove(); runScore += 1; diamonds += 1; updateUI(); runUI.innerHTML = '钻石：' + diamonds; } }
+                    }
+                    if (left < -60) obj.remove();
+                }
+            }
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function createObstacle() { if (Math.random() < 0.45) createSpike(); else createCoin(); }
+        function createSpike() { var s = document.createElement('div'); s.className = 'spike'; s.style.left = (window.innerWidth + 20) + 'px'; s.style.bottom = '30px'; runArea.appendChild(s); }
+        function createCoin() { var c = document.createElement('span'); c.className = 'coin'; c.innerHTML = '💎'; c.style.left = (window.innerWidth + 20) + 'px'; c.style.bottom = (Math.random() * 100 + 50) + 'px'; runArea.appendChild(c); }
+        function createChatGPTEnemy() { var e = document.createElement('img'); e.src = getAssetUrl('6.png'); e.className = 'chatgpt-enemy'; e.style.left = (window.innerWidth + 20) + 'px'; e.style.bottom = '30px'; runArea.appendChild(e); }
+
+        function useRevive() {
+            if (diamonds < 10) return;
+            diamonds -= 10;
+            updateUI();
+            reviveModal.classList.remove('show');
+            revivePending = false;
+            isInvincible = true;
+            document.querySelectorAll('.spike, .chatgpt-enemy').forEach(el => el.remove());
+            runPlayer.style.bottom = '30px';
+            runVelocity = 0;
+            runIsJumping = false;
+            setTimeout(() => { isInvincible = false; }, 2000);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+        function giveUpRevive() { reviveModal.classList.remove('show'); revivePending = false; gameOver(); }
+        function restartRun() { startRunGame(lastDifficulty); }
+        function gameOver() {
+            isRunActive = false;
+            clearInterval(obstacleTimer);
+            clearInterval(enemyTimer);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            document.onkeydown = null;
+            jumpBtn.classList.remove('show');
+            finalScore.textContent = '获得钻石：' + runScore;
+            gameOverScreen.classList.add('show');
+            saveGame(true);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (settingsModal.classList.contains('show')) closeSettings();
+                else if (shop.classList.contains('active')) toggleShop();
+                else if (foodShop.classList.contains('active')) toggleFoodShop();
+                else if (feedPanel.classList.contains('active')) closeFeedPanel();
+                else if (runGame.style.display === 'block') closeRunGame();
+                else if (modManagerModal.classList.contains('show')) closeModManager();
+                else if (!whaleNameInput.classList.contains('show')) saveNameFromInput();
+            }
+        });
+
+        updateMusicToggleUI();
+        updateAutoSaveToggleUI();
+    </script>
+</body>
+</html>
