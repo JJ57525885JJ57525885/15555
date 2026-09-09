@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DeepPet</title>
+    <title>赛博打工鲸：深海饲养员</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         @font-face {
@@ -82,6 +82,7 @@
         .bubble { position: absolute; bottom: -50px; border: 2px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.2); border-radius: 50%; animation: rise linear forwards; z-index: 2; pointer-events: none; }
         @keyframes rise { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(-120vh); opacity: 0; } }
         #pet-hand { position: absolute; font-size: 60px; pointer-events: auto; cursor: move; z-index: 200; display: none; touch-action: none; }
+        #bath-sponge { position: absolute; font-size: 60px; pointer-events: auto; cursor: move; z-index: 200; display: none; touch-action: none; }
         @media (orientation: landscape) { #controls { bottom: 20px; } #hud { top: 10px; left: 10px; transform: scale(0.9); transform-origin: top left; } }
         #run-game { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, #87CEEB, #4A90E2); z-index: 99999; display: none; overflow: hidden; }
         #difficulty-select { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(0,0,0,0.8); padding: 30px; border-radius: 15px; z-index: 10; max-width: 90%; }
@@ -126,6 +127,7 @@
         <img id="whale-img" src="1.gif" alt="虎鲸">
     </div>
     <div id="pet-hand">🤚🏻</div>
+    <div id="bath-sponge">🧽</div>
     <div id="hud">
         <div class="token-wrapper">
             <span class="fatigue-label">疲劳值:</span>
@@ -193,12 +195,11 @@
                 <div class="autosave-toggle" id="autosave-toggle" onclick="toggleAutoSave()"></div>
             </div>
             <div class="settings-divider"></div>
-            <div class="setting-row" style="justify-content:center; gap: 10px;">
-                <button onclick="saveGame(); closeSettings();" style="background:#4CAF50;padding:8px 20px;">💾 保存</button>
-                <button onclick="exitGame()" style="background:#f44336;padding:8px 20px;">🚪 退出</button>
-            </div>
-            <div class="setting-row" style="justify-content:center;">
-                <button onclick="openModManager()" style="background:#8e44ad;padding:8px 20px;">🧩 模组管理</button>
+            <div class="setting-row" style="justify-content:center; gap: 8px; flex-wrap: wrap;">
+                <button onclick="saveGame(); closeSettings();" style="background:#4CAF50;padding:8px 15px;">💾 保存</button>
+                <button onclick="exitGame()" style="background:#f44336;padding:8px 15px;">🚪 退出</button>
+                <button onclick="openModManager()" style="background:#8e44ad;padding:8px 15px;">🧩 模组</button>
+                <button id="fullscreen-toggle-btn" onclick="toggleFullscreen()" style="background:#3498db;padding:8px 15px;">⛶ 全屏</button>
             </div>
             <div class="settings-hint">点击虎鲸头顶的名字可以直接修改</div>
         </div>
@@ -214,13 +215,14 @@
                 <input type="file" id="mod-file-input" accept=".zip" style="display:none" onchange="handleModUpload(event)">
             </div>
             <div class="mod-list" id="mod-list"></div>
-            <div class="settings-hint">ZIP需包含：1.gif, 1.png~7.png, 1.mp3, 1.woff2。缺少的文件将使用默认资源。</div>
+            <div class="settings-hint">ZIP需包含：1.gif, 1.png~8.png, 1.mp3, 1.woff2。缺少的文件将使用默认资源。</div>
         </div>
     </div>
 
     <div id="controls">
         <button class="game-btn" id="btn-food" onclick="toggleFoodShop()">🍎 食物</button>
         <button class="game-btn" id="btn-pet" onclick="pet()">🤚 抚摸</button>
+        <button class="game-btn" id="btn-bath" onclick="bathe()">🧽 洗澡</button>
         <button class="game-btn" id="btn-lift" onclick="lift()">🏋 锻炼</button>
         <button class="game-btn" id="btn-shop" onclick="toggleShop()">🎩 装扮</button>
         <button class="game-btn" id="btn-run" onclick="openRunGame()">🏃 跑酷</button>
@@ -271,7 +273,8 @@
         var isSleeping = false;
         var isSad = false;
         var isPetting = false;
-        var petTimer, sleepTimer, intervalTimer;
+        var isBathing = false;
+        var petTimer, sleepTimer, intervalTimer, bathTimer, cleanlinessTimer;
         var actionLocked = false;
         var actionLockTimer = null;
         var autoSaveEnabled = false;
@@ -279,8 +282,8 @@
         const AUTO_SAVE_DELAY = 30000;
         var freeAppleCount = 3;
         var lastFreeDate = '';
+        var cleanliness = 100;
 
-        // 模组列表相关
         var modList = [];
         var currentModId = null;
         var modBlobUrls = {};
@@ -295,6 +298,7 @@
         var diamondText = document.getElementById('diamonds');
         var hatImg = document.getElementById('hat-img');
         var petHand = document.getElementById('pet-hand');
+        var bathSponge = document.getElementById('bath-sponge');
         var shop = document.getElementById('shop');
         var foodShop = document.getElementById('food-shop');
         var feedPanel = document.getElementById('feed-panel');
@@ -327,6 +331,53 @@
         var bgm = document.getElementById('bgm');
         var modManagerModal = document.getElementById('mod-manager-modal');
         var modStatus = document.getElementById('mod-status');
+        var fullscreenToggleBtn = document.getElementById('fullscreen-toggle-btn');
+
+        // ============ 全屏切换 ============
+        function enterFullscreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(err => {});
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+        }
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(err => {});
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+        function toggleFullscreen() {
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                exitFullscreen();
+            } else {
+                enterFullscreen();
+            }
+        }
+        function updateFullscreenBtn() {
+            if (!fullscreenToggleBtn) return;
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                fullscreenToggleBtn.innerHTML = '⤢ 缩回';
+            } else {
+                fullscreenToggleBtn.innerHTML = '⛶ 全屏';
+            }
+        }
+        document.addEventListener('fullscreenchange', updateFullscreenBtn);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+        window.addEventListener('load', function() {
+            setTimeout(() => enterFullscreen(), 500);
+        });
+        document.addEventListener('click', function() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                enterFullscreen();
+            }
+        });
 
         // ============ 初始化 ============
         loadGame();
@@ -335,6 +386,7 @@
         updateUI();
         updateWhaleNameDisplay();
         startAutoConsume();
+        startCleanlinessDecline();
         renderFeedList();
         initNameEditor();
         loadModsFromDB();
@@ -345,7 +397,7 @@
             return filename;
         }
 
-        // ============ 模组管理（列表版） ============
+        // ============ 模组管理（列表版，持久化） ============
         const MOD_DB_NAME = 'whale-mod-db-v2';
         const MOD_STORE_NAME = 'mod-list';
 
@@ -479,7 +531,7 @@
             if (!file) return;
             const zip = new JSZip();
             zip.loadAsync(file).then(async (zipContent) => {
-                const requiredFiles = ['1.gif', '1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '1.mp3', '1.woff2'];
+                const requiredFiles = ['1.gif', '1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '1.mp3', '1.woff2'];
                 const assets = {};
                 for (let filename of requiredFiles) {
                     const fileEntry = zipContent.file(filename);
@@ -549,14 +601,23 @@
             actionLockTimer = setTimeout(function() {
                 actionLocked = false;
                 setAllGameButtonsDisabled(false);
+                updateBathButtonState(); // 恢复后更新洗澡按钮状态
             }, duration);
         }
 
         function setAllGameButtonsDisabled(disabled) {
             for (var i = 0; i < gameButtons.length; i++) gameButtons[i].disabled = disabled;
+            if (!disabled) updateBathButtonState(); // 恢复时根据清洁度重新设置
         }
 
         function isLocked() { return actionLocked; }
+
+        function updateBathButtonState() {
+            var bathBtn = document.getElementById('btn-bath');
+            if (bathBtn) {
+                bathBtn.disabled = (isLocked() || isSleeping || isPetting || isBathing || cleanliness >= 30);
+            }
+        }
 
         function openSettings() { settingsModal.classList.add('show'); modManagerModal.classList.remove('show'); }
         function closeSettings() { settingsModal.classList.remove('show'); }
@@ -570,6 +631,7 @@
             };
             updateMusicToggleUI();
             updateAutoSaveToggleUI();
+            updateBathButtonState();
         }
 
         function toggleMusic() {
@@ -645,7 +707,8 @@
                 foodInventory: foodInventory,
                 autoSaveEnabled: autoSaveEnabled,
                 freeAppleCount: freeAppleCount,
-                lastFreeDate: lastFreeDate
+                lastFreeDate: lastFreeDate,
+                cleanliness: cleanliness
             };
             localStorage.setItem('whaleGameSave', JSON.stringify(saveData));
             if (!silent) alert('保存成功！');
@@ -667,6 +730,7 @@
                     autoSaveEnabled = data.autoSaveEnabled || false;
                     freeAppleCount = data.freeAppleCount !== undefined ? data.freeAppleCount : 3;
                     lastFreeDate = data.lastFreeDate || '';
+                    cleanliness = data.cleanliness !== undefined ? data.cleanliness : 100;
                     if (currentHat) hatImg.innerHTML = currentHat;
                     var hatButtons = document.querySelectorAll('.hat-item button');
                     for (var i = 0; i < hatButtons.length; i++) {
@@ -678,6 +742,7 @@
                 } catch (e) { console.log('加载失败'); }
             }
             if (autoSaveEnabled) autoSaveInterval = setInterval(() => saveGame(true), AUTO_SAVE_DELAY);
+            updateBathButtonState();
         }
 
         function checkFreeAppleReset() {
@@ -774,7 +839,7 @@
         }
 
         function pet() {
-            if (isSleeping || isPetting || isLocked()) return;
+            if (isSleeping || isPetting || isBathing || isLocked()) return;
             lockButtons(10000);
             isPetting = true;
             whaleImg.src = getAssetUrl("5.png");
@@ -808,11 +873,65 @@
                 isPetting = false;
                 petHand.style.display = 'none';
                 checkState();
+                updateBathButtonState();
             }, 10000);
         }
 
+        function bathe() {
+            if (isSleeping || isPetting || isBathing || isLocked()) return;
+            if (cleanliness >= 30) {
+                alert('虎鲸还不太脏，不需要洗澡~');
+                return;
+            }
+            lockButtons(10000);
+            isBathing = true;
+            whaleImg.src = getAssetUrl("8.png");
+            statusText.innerHTML = "状态：正在洗澡🧽...";
+            bathSponge.style.display = 'block';
+            bathSponge.style.left = '50%';
+            bathSponge.style.top = '50%';
+            var isDragging = false;
+            bathSponge.onmousedown = function(e) { isDragging = true; moveSponge(e.clientX, e.clientY); return false; };
+            bathSponge.ontouchstart = function(e) { isDragging = true; var t = e.touches[0]; moveSponge(t.clientX, t.clientY); return false; };
+            document.onmousemove = function(e) { if (isDragging) moveSponge(e.clientX, e.clientY); };
+            document.ontouchmove = function(e) { if (isDragging) { var t = e.touches[0]; moveSponge(t.clientX, t.clientY); } };
+            document.onmouseup = function() { isDragging = false; };
+            document.ontouchend = function() { isDragging = false; };
+            function moveSponge(x, y) { bathSponge.style.left = x + 'px'; bathSponge.style.top = y + 'px'; }
+            clearTimeout(bathTimer);
+            bathTimer = setTimeout(function() {
+                document.onmousemove = null;
+                document.ontouchmove = null;
+                document.onmouseup = null;
+                document.ontouchend = null;
+                bathSponge.style.display = 'none';
+                isBathing = false;
+                cleanliness = 100;
+                statusText.innerHTML = "状态：洗得干干净净！";
+                saveGame(true);
+                checkState();
+                updateBathButtonState();
+                setTimeout(() => checkState(), 1000);
+            }, 10000);
+        }
+
+        function startCleanlinessDecline() {
+            clearInterval(cleanlinessTimer);
+            cleanlinessTimer = setInterval(function() {
+                if (!isSleeping && !isBathing) {
+                    cleanliness -= 5;
+                    if (cleanliness < 0) cleanliness = 0;
+                    if (cleanliness <= 30) {
+                        checkState();
+                    }
+                    updateBathButtonState();
+                    saveGame(true);
+                }
+            }, 30000);
+        }
+
         function lift() {
-            if (isSleeping || token < 15 || isLocked()) return;
+            if (isSleeping || token < 15 || isBathing || isLocked()) return;
             lockButtons(1500);
             token -= 15;
             whaleImg.src = getAssetUrl("1.png");
@@ -824,9 +943,24 @@
         function checkState() {
             updateUI();
             if (token <= 0) { startServerError(); return; }
-            if (token <= 20) { isSad = true; whaleImg.src = getAssetUrl("4.png"); statusText.innerHTML = "状态：饿得伤心了..."; }
-            else if (token <= 50) { isSad = false; whaleImg.src = getAssetUrl("3.png"); statusText.innerHTML = "状态：举铁太累，流汗了"; }
-            else if (!isPetting) { isSad = false; whaleImg.src = getAssetUrl("1.gif"); statusText.innerHTML = "状态：正常开心"; }
+            if (cleanliness <= 30) {
+                isSad = false;
+                whaleImg.src = getAssetUrl("8.png");
+                statusText.innerHTML = "状态：脏兮兮的，需要洗澡！";
+            } else if (token <= 20) {
+                isSad = true;
+                whaleImg.src = getAssetUrl("4.png");
+                statusText.innerHTML = "状态：饿得伤心了...";
+            } else if (token <= 50) {
+                isSad = false;
+                whaleImg.src = getAssetUrl("3.png");
+                statusText.innerHTML = "状态：举铁太累，流汗了";
+            } else if (!isPetting && !isBathing) {
+                isSad = false;
+                whaleImg.src = getAssetUrl("1.gif");
+                statusText.innerHTML = "状态：正常开心";
+            }
+            updateBathButtonState();
         }
 
         function startServerError() {
@@ -908,7 +1042,7 @@
         function startAutoConsume() {
             clearInterval(intervalTimer);
             intervalTimer = setInterval(function() {
-                if (!isSleeping && !isPetting) {
+                if (!isSleeping && !isPetting && !isBathing) {
                     var consume = (hatType === 'crown') ? 0.5 : 1;
                     token -= consume;
                     checkState();
@@ -1053,6 +1187,8 @@
 
         updateMusicToggleUI();
         updateAutoSaveToggleUI();
+        updateBathButtonState();
+        updateFullscreenBtn();
     </script>
 </body>
 </html>
