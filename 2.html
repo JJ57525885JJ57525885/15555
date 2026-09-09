@@ -46,7 +46,7 @@
         }
         .btn {
             display: inline-block;
-            padding: 12px 20px;
+            padding: 12px 25px;
             background: #3498db;
             color: white;
             border: none;
@@ -55,22 +55,15 @@
             cursor: pointer;
             text-decoration: none;
             transition: all 0.3s;
-            margin: 5px;
         }
         .btn:hover {
             background: #2980b9;
             transform: translateY(-2px);
         }
-        .btn.back {
-            background: #7f8c8d;
-        }
-        .btn.back:hover {
-            background: #6c7a7d;
-        }
         .update-hint {
             color: #e74c3c;
             font-size: 12px;
-            margin-top: 10px;
+            margin-top: 15px;
             display: none;
         }
     </style>
@@ -82,9 +75,8 @@
             深海饲养员 - 一款可爱的虎鲸养成游戏<br>
             照顾你的专属虎鲸，一起冒险吧！
         </div>
-        <div class="version" id="version-text">版本：1.0</div>
+        <div class="version" id="version-text">版本：2.0</div>
         <button class="btn" id="download-btn" onclick="downloadApp()">📥 下载应用</button>
-        <button class="btn back" onclick="goBack()">← 返回游戏</button>
         <div class="update-hint" id="update-hint">检测到新版本可用！</div>
     </div>
 
@@ -96,7 +88,7 @@
         document.getElementById('version-text').textContent = '版本：' + CURRENT_VERSION;
 
         function checkForUpdate() {
-            // 模拟获取最新版本号（实际可改为 fetch 请求）
+            // 模拟获取最新版本号（可替换为 fetch 请求真实数据）
             const latestVersion = '2.0';
             const downloadBtn = document.getElementById('download-btn');
             const updateHint = document.getElementById('update-hint');
@@ -120,11 +112,6 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        }
-
-        function goBack() {
-            window.location.href = 'https://jj57525885jj57525885.github.io/15555/';
-            // 如果主页面文件名不是 index.html，请修改为实际文件名
         }
 
         // 页面加载时检查更新
