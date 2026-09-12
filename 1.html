@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🐋 虎鲸工具箱</title>
+<style>
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+    margin: 0; padding: 15px; min-height: 100vh;
+    background: linear-gradient(180deg, #0a2a4a 0%, #021c3d 50%, #001020 100%);
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    color: #fff; font-size: 14px; line-height: 1.6;
+}
+h1 { text-align: center; font-size: 26px; margin: 10px 0 4px; letter-spacing: 2px; }
+.subtitle { text-align: center; color: #7bb3e0; font-size: 12px; margin-bottom: 20px; }
+.tabs { display: flex; gap: 8px; margin-bottom: 15px; max-width: 700px; margin-left: auto; margin-right: auto; }
+.tab { flex: 1; padding: 14px; border: 2px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #aaa; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+.tab.active { background: #426EFE; border-color: #426EFE; color: white; box-shadow: 0 4px 16px rgba(66,110,254,0.4); }
+.panel { max-width: 700px; margin: 0 auto; }
+.panel.hidden { display: none; }
+.card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 15px; margin-bottom: 15px; backdrop-filter: blur(8px); }
+.card h3 { margin: 0 0 12px; font-size: 15px; color: #ffcc00; font-weight: 600; }
+textarea { width: 100%; min-height: 100px; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.35); color: #7ee; font-family: 'Courier New', monospace; font-size: 13px; outline: none; resize: vertical; word-break: break-all; }
+textarea::placeholder { color: #557; }
+textarea:focus { border-color: #426EFE; }
+input[type="text"] { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.35); color: #fff; outline: none; }
+.file-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.file-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: #3498db; color: white; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; box-shadow: 0 3px 10px rgba(52,152,219,0.3); transition: all 0.2s; }
+.file-btn:hover { background: #2980b9; transform: translateY(-1px); }
+.file-info { color: #88a; font-size: 12px; flex: 1; word-break: break-all; }
+.format-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.format-btn { padding: 12px 8px; border: 2px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #bbb; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.format-btn.active { background: #426EFE; border-color: #426EFE; color: white; box-shadow: 0 3px 12px rgba(66,110,254,0.4); }
+.format-btn:hover:not(.active) { background: rgba(255,255,255,0.1); }
+.action-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.primary-btn, .secondary-btn { flex: 1; min-width: 100px; padding: 12px 16px; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+.primary-btn { background: linear-gradient(135deg, #426EFE, #6c8efe); color: white; box-shadow: 0 4px 14px rgba(66,110,254,0.4); }
+.primary-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(66,110,254,0.5); }
+.secondary-btn { background: rgba(255,255,255,0.1); color: #ccc; border: 1px solid rgba(255,255,255,0.15); }
+.secondary-btn:hover { background: rgba(255,255,255,0.18); color: white; }
+.info { margin-top: 10px; font-size: 12px; color: #88a; padding: 8px 12px; background: rgba(0,0,0,0.3); border-radius: 8px; border-left: 3px solid #426EFE; display: none; }
+.info.show { display: block; }
+.info.success { color: #6ee87a; border-left-color: #4CAF50; }
+.info.error { color: #ff8080; border-left-color: #f44336; }
+.info.warn { color: #ffcc00; border-left-color: #ffcc00; }
+#encode-preview, #decode-preview { margin-top: 10px; text-align: center; display: none; }
+#encode-preview.show, #decode-preview.show { display: block; }
+#encode-preview img, #decode-preview img { max-width: 100%; max-height: 200px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+.footer { text-align: center; color: #557; font-size: 12px; margin: 30px 0 10px; }
+</style>
+</head>
+<body>
+
+<h1>🐋 虎鲸工具箱</h1>
+<div class="subtitle">纯离线运行 · 不联网不上传 · 数据只在你的设备上</div>
+
+<div class="tabs">
+    <button class="tab active" id="tab-encode">📤 编码</button>
+    <button class="tab" id="tab-decode">📥 解码</button>
+</div>
+
+<!-- ============ 编码面板 ============ -->
+<div class="panel" id="panel-encode">
+    <div class="card">
+        <h3>📝 输入内容</h3>
+        <textarea id="encode-input" placeholder="在此输入要编码的文字..."></textarea>
+        <div class="file-row">
+            <label class="file-btn">📁 选择文件<input type="file" id="encode-file" style="display:none"></label>
+            <span class="file-info" id="encode-file-info">或选择一个文件（图片/音频/文档等）</span>
+            <button class="secondary-btn" id="encode-clear-file" style="display:none; flex:0 0 auto; padding:6px 12px; font-size:12px;">✖</button>
+        </div>
+        <div id="encode-preview"></div>
+    </div>
+
+    <div class="card">
+        <h3>🎯 编码格式</h3>
+        <div class="format-grid" id="encode-formats">
+            <button class="format-btn active" data-format="base64">Base64</button>
+            <button class="format-btn" data-format="unicode">Unicode</button>
+            <button class="format-btn" data-format="hex">十六进制</button>
+            <button class="format-btn" data-format="binary">二进制</button>
+            <button class="format-btn" data-format="ascii">ASCII</button>
+        </div>
+        <button class="primary-btn" id="encode-btn" style="width:100%;">⚡ 开始编码</button>
+    </div>
+
+    <div class="card">
+        <h3>📤 编码结果</h3>
+        <textarea id="encode-output" readonly placeholder="结果将显示在这里..." style="min-height:120px;"></textarea>
+        <div class="action-row">
+            <button class="secondary-btn" id="encode-copy">📋 复制</button>
+            <button class="secondary-btn" id="encode-to-decode">➡️ 转到解码</button>
+            <button class="secondary-btn" id="encode-clear">🗑 清空</button>
+        </div>
+        <div class="info" id="encode-info"></div>
+    </div>
+</div>
+
+<!-- ============ 解码面板 ============ -->
+<div class="panel hidden" id="panel-decode">
+    <div class="card">
+        <h3>📝 粘贴编码文本</h3>
+        <textarea id="decode-input" placeholder="在此粘贴编码文本，例如 SGVsbG8gV29ybGQ= ..." style="min-height:120px;"></textarea>
+        <div class="action-row">
+            <button class="secondary-btn" id="decode-paste">📋 从剪贴板粘贴</button>
+            <button class="secondary-btn" id="decode-clear-input">🗑 清空</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>🎯 解码格式</h3>
+        <div class="format-grid" id="decode-formats">
+            <button class="format-btn active" data-format="auto">🔍 自动识别</button>
+            <button class="format-btn" data-format="base64">Base64</button>
+            <button class="format-btn" data-format="unicode">Unicode</button>
+            <button class="format-btn" data-format="hex">十六进制</button>
+            <button class="format-btn" data-format="binary">二进制</button>
+            <button class="format-btn" data-format="ascii">ASCII</button>
+        </div>
+        <button class="primary-btn" id="decode-btn" style="width:100%;">🔓 开始解码</button>
+    </div>
+
+    <div class="card">
+        <h3>📥 解码结果</h3>
+        <div id="decode-preview"></div>
+        <textarea id="decode-output" readonly placeholder="解码结果将显示在这里..." style="min-height:100px;"></textarea>
+        <div class="action-row">
+            <button class="secondary-btn" id="decode-copy">📋 复制文字</button>
+            <button class="secondary-btn" id="decode-download" style="display:none; background:#4CAF50; color:white; border-color:#4CAF50;">💾 下载文件</button>
+            <button class="secondary-btn" id="decode-clear">🗑 清空</button>
+        </div>
+        <div class="info" id="decode-info"></div>
+    </div>
+</div>
+
+<div class="footer">🐋 虎鲸工具箱 · 数据全程本地处理</div>
+
+<script>
+// ============ 基础工具 ============
+function strToBytes(str) {
+    if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+    var utf8 = unescape(encodeURIComponent(str));
+    var bytes = new Uint8Array(utf8.length);
+    for (var i = 0; i < utf8.length; i++) bytes[i] = utf8.charCodeAt(i);
+    return bytes;
+}
+function bytesToStr(bytes) {
+    if (typeof TextDecoder !== 'undefined') return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+    var str = '';
+    for (var i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+    try { return decodeURIComponent(escape(str)); } catch (e) { return str; }
+}
+function bytesToBase64(bytes) {
+    var bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+}
+function base64ToBytes(b64) {
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+}
+function bytesToHex(bytes) {
+    var p = [];
+    for (var i = 0; i < bytes.length; i++) {
+        var h = bytes[i].toString(16).toUpperCase();
+        if (h.length < 2) h = '0' + h;
+        p.push(h);
+    }
+    return p.join(' ');
+}
+function hexToBytes(hex) {
+    var clean = hex.replace(/[^0-9a-fA-F]/g, '');
+    if (clean.length % 2 !== 0) throw new Error('十六进制长度必须是偶数');
+    var bytes = new Uint8Array(clean.length / 2);
+    for (var i = 0; i < bytes.length; i++) bytes[i] = parseInt(clean.substr(i * 2, 2), 16);
+    return bytes;
+}
+function bytesToBinary(bytes) {
+    var p = [];
+    for (var i = 0; i < bytes.length; i++) {
+        var b = bytes[i].toString(2);
+        while (b.length < 8) b = '0' + b;
+        p.push(b);
+    }
+    return p.join(' ');
+}
+function binaryToBytes(bin) {
+    var clean = bin.replace(/[^01]/g, '');
+    if (clean.length % 8 !== 0) throw new Error('二进制长度必须是 8 的倍数');
+    var bytes = new Uint8Array(clean.length / 8);
+    for (var i = 0; i < bytes.length; i++) bytes[i] = parseInt(clean.substr(i * 8, 8), 2);
+    return bytes;
+}
+function strToUnicode(str) {
+    var p = [];
+    for (var i = 0; i < str.length; i++) {
+        var c = str.charCodeAt(i).toString(16).toUpperCase();
+        while (c.length < 4) c = '0' + c;
+        p.push('\\u' + c);
+    }
+    return p.join('');
+}
+function unicodeToStr(str) {
+    return str.replace(/\\u([0-9a-fA-F]{4})/g, function(m, c) {
+        return String.fromCharCode(parseInt(c, 16));
+    });
+}
+function strToAscii(str) {
+    var p = [], warn = false;
+    for (var i = 0; i < str.length; i++) {
+        var code = str.charCodeAt(i);
+        if (code < 128) p.push(code);
+        else { p.push('?'); warn = true; }
+    }
+    return { text: p.join(' '), warn: warn };
+}
+function asciiToStr(text) {
+    var parts = text.trim().split(/\s+/);
+    var r = '';
+    for (var i = 0; i < parts.length; i++) {
+        var code = parseInt(parts[i], 10);
+        if (!isNaN(code)) r += String.fromCharCode(code);
+    }
+    return r;
+}
+function blobToDataURL(blob) {
+    return new Promise(function(resolve, reject) {
+        var r = new FileReader();
+        r.onload = function() { resolve(r.result); };
+        r.onerror = function() { reject(r.error); };
+        r.readAsDataURL(blob);
+    });
+}
+function dataURLToBlob(d) {
+    var p = d.split(',');
+    var meta = p[0], body = p[1];
+    var mime = (meta.match(/data:([^;]*)/) || [])[1] || 'application/octet-stream';
+    var isB64 = meta.indexOf(';base64') !== -1;
+    var bin = isB64 ? atob(body) : decodeURIComponent(body);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
+}
+function copyText(text, infoEl) {
+    if (!text) { showInfo(infoEl, '⚠️ 没有内容可复制', 'warn'); return; }
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    try {
+        var ok = document.execCommand('copy');
+        if (ok) showInfo(infoEl, '✅ 已复制到剪贴板', 'success');
+        else showInfo(infoEl, '⚠️ 复制失败，请手动长按选择复制', 'warn');
+    } catch (e) {
+        showInfo(infoEl, '⚠️ 复制失败：' + e.message, 'error');
+    }
+    document.body.removeChild(ta);
+}
+function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 3000);
+}
+function showInfo(el, text, type) {
+    if (!el) return;
+    el.innerHTML = text;
+    el.className = 'info show' + (type ? ' ' + type : '');
+}
+function hideInfo(el) { if (el) el.className = 'info'; }
+function detectFileType(bytes) {
+    if (bytes.length < 4) return null;
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) return { mime: 'image/png', ext: 'png' };
+    if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return { mime: 'image/jpeg', ext: 'jpg' };
+    if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) return { mime: 'image/gif', ext: 'gif' };
+    if (bytes[0] === 0x42 && bytes[1] === 0x4D) return { mime: 'image/bmp', ext: 'bmp' };
+    if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) return { mime: 'application/pdf', ext: 'pdf' };
+    if (bytes[0] === 0x50 && bytes[1] === 0x4B) return { mime: 'application/zip', ext: 'zip' };
+    if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) return { mime: 'audio/mpeg', ext: 'mp3' };
+    if (bytes.length > 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return { mime: 'image/webp', ext: 'webp' };
+    if (bytes.length > 12 && bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) return { mime: 'video/mp4', ext: 'mp4' };
+    if (bytes[0] === 0x1F && bytes[1] === 0x8B) return { mime: 'application/gzip', ext: 'gz' };
+    return null;
+}
+
+// ============ 状态 ============
+var encodeFormat = 'base64';
+var decodeFormat = 'auto';
+var currentFile = null;
+var currentFileDataURL = null;
+var currentDecodedBlob = null;
+var currentDecodedFileName = 'decoded_file';
+
+// ============ DOM ============
+var $ = function(id) { return document.getElementById(id); };
+
+// ============ Tab 切换 ============
+$('tab-encode').onclick = function() {
+    this.classList.add('active');
+    $('tab-decode').classList.remove('active');
+    $('panel-encode').classList.remove('hidden');
+    $('panel-decode').classList.add('hidden');
+};
+$('tab-decode').onclick = function() {
+    this.classList.add('active');
+    $('tab-encode').classList.remove('active');
+    $('panel-decode').classList.remove('hidden');
+    $('panel-encode').classList.add('hidden');
+};
+
+// ============ 编码格式选择 ============
+var encodeBtns = document.querySelectorAll('#encode-formats .format-btn');
+for (var i = 0; i < encodeBtns.length; i++) {
+    encodeBtns[i].onclick = function() {
+        for (var j = 0; j < encodeBtns.length; j++) encodeBtns[j].classList.remove('active');
+        this.classList.add('active');
+        encodeFormat = this.getAttribute('data-format');
+    };
+}
+
+// ============ 解码格式选择 ============
+var decodeBtns = document.querySelectorAll('#decode-formats .format-btn');
+for (var k = 0; k < decodeBtns.length; k++) {
+    decodeBtns[k].onclick = function() {
+        for (var j = 0; j < decodeBtns.length; j++) decodeBtns[j].classList.remove('active');
+        this.classList.add('active');
+        decodeFormat = this.getAttribute('data-format');
+    };
+}
+
+// ============ 文件选择 ============
+$('encode-file').onchange = function(e) {
+    var f = e.target.files[0];
+    if (!f) return;
+    currentFile = f;
+    $('encode-file-info').textContent = '📎 ' + f.name + ' (' + (f.size / 1024).toFixed(1) + ' KB)';
+    $('encode-clear-file').style.display = 'block';
+    // 图片预览
+    if (f.type.indexOf('image/') === 0) {
+        var r = new FileReader();
+        r.onload = function(ev) {
+            $('encode-preview').innerHTML = '<img src="' + ev.target.result + '" alt="preview">';
+            $('encode-preview').classList.add('show');
+        };
+        r.readAsDataURL(f);
+    } else {
+        $('encode-preview').classList.remove('show');
+        $('encode-preview').innerHTML = '';
+    }
+    // 选择文件后清空文字输入
+    $('encode-input').value = '';
+};
+$('encode-clear-file').onclick = function() {
+    currentFile = null;
+    $('encode-file').value = '';
+    $('encode-file-info').textContent = '或选择一个文件（图片/音频/文档等）';
+    $('encode-clear-file').style.display = 'none';
+    $('encode-preview').classList.remove('show');
+    $('encode-preview').innerHTML = '';
+};
+
+// ============ 编码 ============
+$('encode-btn').onclick = function() {
+    var text = $('encode-input').value;
+    var out = $('encode-output');
+    var info = $('encode-info');
+
+    // 优先处理文件
+    if (currentFile) {
+        if (encodeFormat !== 'base64') {
+            showInfo(info, '⚠️ 文件编码只支持 Base64（其他编码是为文字设计的）', 'warn');
+        }
+        blobToDataURL(currentFile).then(function(dataURL) {
+            out.value = dataURL;
+            var size = (currentFile.size / 1024).toFixed(1);
+            showInfo(info, '✅ 已编码文件：' + currentFile.name + ' (' + size + ' KB)\nBase64 长度：' + dataURL.length + ' 字符', 'success');
+        }).catch(function(e) {
+            showInfo(info, '❌ 文件读取失败：' + e.message, 'error');
+        });
+        return;
+    }
+
+    if (!text) { showInfo(info, '⚠️ 请先输入文字或选择文件', 'warn'); return; }
+
+    try {
+        var result = '';
+        var note = '';
+        if (encodeFormat === 'base64') {
+            result = bytesToBase64(strToBytes(text));
+            note = 'Base64 · ' + result.length + ' 字符';
+        } else if (encodeFormat === 'unicode') {
+            result = strToUnicode(text);
+            note = 'Unicode 转义 · ' + text.length + ' 字符 → ' + result.length + ' 字符';
+        } else if (encodeFormat === 'hex') {
+            var b = strToBytes(text);
+            result = bytesToHex(b);
+            note = '十六进制 · ' + b.length + ' 字节';
+        } else if (encodeFormat === 'binary') {
+            var b2 = strToBytes(text);
+            result = bytesToBinary(b2);
+            note = '二进制 · ' + b2.length + ' 字节';
+        } else if (encodeFormat === 'ascii') {
+            var r = strToAscii(text);
+            result = r.text;
+            note = 'ASCII 码 · ' + text.length + ' 字符';
+            if (r.warn) note += '（包含非 ASCII 字符，已用 ? 替代）';
+        }
+        out.value = result;
+        showInfo(info, '✅ 编码完成 · ' + note, 'success');
+    } catch (e) {
+        showInfo(info, '❌ 编码失败：' + e.message, 'error');
+    }
+};
+
+// ============ 复制/清空/跳转 ============
+$('encode-copy').onclick = function() { copyText($('encode-output').value, $('encode-info')); };
+$('encode-clear').onclick = function() {
+    $('encode-output').value = '';
+    hideInfo($('encode-info'));
+};
+$('encode-to-decode').onclick = function() {
+    var t = $('encode-output').value;
+    if (!t) { showInfo($('encode-info'), '⚠️ 没有内容可以传送', 'warn'); return; }
+    $('decode-input').value = t;
+    $('tab-decode').click();
+    window.scrollTo(0, 0);
+};
+
+// ============ 解码 ============
+function autoDetectFormat(text) {
+    var t = text.trim();
+    if (/\\u[0-9a-fA-F]{4}/.test(t)) return 'unicode';
+    if (/^[01\s]+$/.test(t) && t.replace(/\s/g, '').length % 8 === 0 && t.replace(/\s/g, '').length > 0) return 'binary';
+    if (/^data:[^;]+;base64,/.test(t)) return 'base64';
+    if (/^[A-Za-z0-9+/=\s]+$/.test(t) && t.replace(/\s/g, '').length % 4 === 0 && t.length > 4) return 'base64';
+    if (/^[0-9a-fA-F\s]+$/.test(t) && t.replace(/\s/g, '').length % 2 === 0 && /[a-fA-F]/.test(t)) return 'hex';
+    if (/^[0-9\s]+$/.test(t)) return 'ascii';
+    return 'base64';
+}
+
+function decodeBase64(text) {
+    text = text.trim();
+    if (text.indexOf('data:') === 0) {
+        var m = text.match(/^data:([^;]*)(;base64)?,([\s\S]*)$/);
+        if (m) {
+            var mime = m[1] || 'application/octet-stream';
+            var data = m[3].replace(/\s+/g, '');
+            var bytes = base64ToBytes(data);
+            return { bytes: bytes, mime: mime, isFile: true };
+        }
+    }
+    var clean = text.replace(/\s+/g, '');
+    var bytes2 = base64ToBytes(clean);
+    var ft = detectFileType(bytes2);
+    if (ft) return { bytes: bytes2, mime: ft.mime, ext: ft.ext, isFile: true };
+    var str = bytesToStr(bytes2);
+    if (str.indexOf('\uFFFD') !== -1) return { bytes: bytes2, mime: 'application/octet-stream', ext: 'bin', isFile: true };
+    return { text: str, bytes: bytes2, isFile: false };
+}
+
+$('decode-btn').onclick = function() {
+    var text = $('decode-input').value;
+    var out = $('decode-output');
+    var info = $('decode-info');
+    var preview = $('decode-preview');
+    var dlBtn = $('decode-download');
+
+    currentDecodedBlob = null;
+    dlBtn.style.display = 'none';
+    preview.classList.remove('show');
+    preview.innerHTML = '';
+    out.value = '';
+
+    if (!text.trim()) { showInfo(info, '⚠️ 请先粘贴编码文本', 'warn'); return; }
+
+    var fmt = decodeFormat;
+    if (fmt === 'auto') {
+        fmt = autoDetectFormat(text);
+        showInfo(info, '🔍 自动识别为：' + fmt, 'warn');
+    }
+
+    try {
+        if (fmt === 'base64') {
+            var res = decodeBase64(text);
+            if (res.isFile) {
+                var blob = new Blob([res.bytes], { type: res.mime });
+                currentDecodedBlob = blob;
+                currentDecodedFileName = 'decoded_' + Date.now() + '.' + (res.ext || 'bin');
+                if (res.mime.indexOf('image/') === 0) {
+                    var url = URL.createObjectURL(blob);
+                    preview.innerHTML = '<img src="' + url + '" alt="preview">';
+                    preview.classList.add('show');
+                }
+                dlBtn.style.display = 'block';
+                out.value = '[二进制文件]\n类型：' + res.mime + '\n大小：' + res.bytes.length + ' 字节';
+                showInfo(info, '✅ 解码成功！这是一个文件，点「💾 下载文件」保存。', 'success');
+            } else {
+                out.value = res.text;
+                showInfo(info, '✅ 解码成功 · ' + res.text.length + ' 字符', 'success');
+            }
+        } else if (fmt === 'unicode') {
+            var s = unicodeToStr(text);
+            out.value = s;
+            showInfo(info, '✅ 解码成功 · ' + s.length + ' 字符', 'success');
+        } else if (fmt === 'hex') {
+            var b = hexToBytes(text);
+            var str = bytesToStr(b);
+            out.value = str;
+            showInfo(info, '✅ 解码成功 · ' + b.length + ' 字节 → ' + str.length + ' 字符', 'success');
+        } else if (fmt === 'binary') {
+            var b2 = binaryToBytes(text);
+            var str2 = bytesToStr(b2);
+            out.value = str2;
+            showInfo(info, '✅ 解码成功 · ' + b2.length + ' 字节 → ' + str2.length + ' 字符', 'success');
+        } else if (fmt === 'ascii') {
+            var s2 = asciiToStr(text);
+            out.value = s2;
+            showInfo(info, '✅ 解码成功 · ' + s2.length + ' 字符', 'success');
+        }
+    } catch (e) {
+        showInfo(info, '❌ 解码失败：' + e.message, 'error');
+    }
+};
+
+$('decode-download').onclick = function() {
+    if (!currentDecodedBlob) return;
+    downloadBlob(currentDecodedBlob, currentDecodedFileName);
+    showInfo($('decode-info'), '✅ 已下载：' + currentDecodedFileName, 'success');
+};
+$('decode-copy').onclick = function() { copyText($('decode-output').value, $('decode-info')); };
+$('decode-clear').onclick = function() {
+    $('decode-input').value = '';
+    $('decode-output').value = '';
+    $('decode-preview').classList.remove('show');
+    $('decode-preview').innerHTML = '';
+    $('decode-download').style.display = 'none';
+    currentDecodedBlob = null;
+    hideInfo($('decode-info'));
+};
+$('decode-clear-input').onclick = function() {
+    $('decode-input').value = '';
+    hideInfo($('decode-info'));
+};
+$('decode-paste').onclick = function() {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+        navigator.clipboard.readText().then(function(t) {
+            $('decode-input').value = t;
+            showInfo($('decode-info'), '✅ 已粘贴 ' + t.length + ' 字符', 'success');
+        }).catch(function() {
+            showInfo($('decode-info'), '⚠️ 无法读取剪贴板，请长按输入框手动粘贴', 'warn');
+        });
+    } else {
+        showInfo($('decode-info'), '⚠️ 浏览器不支持自动读取剪贴板，请长按输入框手动粘贴', 'warn');
+    }
+};
+
+// 初始化：显示一条提示
+showInfo($('encode-info'), '💡 提示：文件只能用 Base64 编码；文字支持全部格式。', 'warn');
+</script>
+</body>
+</html>

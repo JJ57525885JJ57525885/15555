@@ -6,27 +6,14 @@
     <title>赛博打工鲸：深海饲养员</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        @font-face {
-            font-family: 'WhaleCustomFont';
-            src: url('1.woff2') format('woff2');
-            font-weight: normal;
-            font-style: normal;
-            font-display: swap;
-        }
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #87CEEB;
-            font-family: sans-serif;
-            user-select: none;
-            touch-action: none;
-        }
+        @font-face { font-family: 'WhaleCustomFont'; src: url('1.woff2') format('woff2'); font-weight: normal; font-style: normal; font-display: swap; }
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; user-select: none; touch-action: none; }
         #seafloor { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; background: #E8C97D; border-top: 10px solid #D4AF5A; z-index: 1; }
         #whale-box { position: absolute; width: 200px; height: 240px; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; }
         #whale-img { width: 200px; height: 200px; position: absolute; bottom: 0; left: 0; }
         #hat-img { position: absolute; top: 48px; left: 42%; transform: translateX(-50%); font-size: 50px; z-index: 11; pointer-events: none; }
         #whale-name-container { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 15; pointer-events: auto; cursor: pointer; text-align: center; }
-        #whale-name-text { font-family: 'WhaleCustomFont', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 22px; font-weight: bold; color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.4); transition: opacity 0.2s; white-space: nowrap; letter-spacing: 1px; }
+        #whale-name-text { font-family: 'WhaleCustomFont', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 22px; font-weight: bold; color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.4); transition: opacity 0.2s, color 0.2s; white-space: nowrap; letter-spacing: 1px; }
         #whale-name-text:hover { opacity: 0.8; }
         #whale-name-input { display: none; font-family: 'WhaleCustomFont', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 20px; font-weight: bold; color: #fff; background: rgba(0,0,0,0.5); border: none; border-radius: 10px; padding: 4px 12px; text-align: center; outline: none; width: 160px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); letter-spacing: 1px; }
         #whale-name-input.show { display: inline-block; }
@@ -48,10 +35,11 @@
         button:disabled { background: #999; cursor: not-allowed; opacity: 0.5; box-shadow: none; }
         #right-buttons { position: absolute; top: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 15px; }
         #right-buttons button { width: 40px; height: 40px; padding: 0; border-radius: 50%; background: rgba(255,255,255,0.3); font-size: 18px; line-height: 40px; border: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(5px); color: white; cursor: pointer; }
-        #shop, #food-shop, #feed-panel, #settings-modal, #mod-manager-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        #shop.active, #food-shop.active, #feed-panel.active, #settings-modal.show, #mod-manager-modal.show { display: flex; }
+        #right-buttons button.active { background: rgba(255,204,0,0.5); border-color: #ffcc00; }
+        #shop, #food-shop, #feed-panel, #settings-modal, #mod-manager-modal, #about-modal, #mod-maker-modal, #tutorial-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        #shop.active, #food-shop.active, #feed-panel.active, #settings-modal.show, #mod-manager-modal.show, #about-modal.show, #mod-maker-modal.show, #tutorial-modal.show { display: flex; }
         .shop-header { position: absolute; top: 20px; right: 20px; font-size: 30px; cursor: pointer; color: white; }
-        #shop h3, #food-shop h3, #feed-panel h3, #settings-panel h2, #mod-manager-panel h2 { margin-top: 50px; font-size: 24px; color: white; margin-bottom: 20px; }
+        #shop h3, #food-shop h3, #feed-panel h3, #settings-panel h2, #mod-manager-panel h2, #about-panel h2, #mod-maker-panel h2, #tutorial-panel h2 { margin-top: 50px; font-size: 24px; color: white; margin-bottom: 20px; }
         .hat-list, .food-list, .feed-list { width: 90%; max-width: 400px; margin-bottom: 40px; }
         .hat-item, .food-item, .feed-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; }
         .hat-info, .food-info, .feed-info { flex: 1; color: white; font-size: 14px; text-align: left; }
@@ -59,26 +47,49 @@
         .hat-info .hat-desc, .food-info .food-desc, .feed-info .feed-desc { color: #ccc; font-size: 12px; }
         .hat-item button, .food-item button, .feed-item button { margin-left: 10px; background: #426EFE; min-width: 60px; }
         .feed-item button:disabled { background: #666; cursor: not-allowed; opacity: 0.6; }
-        #settings-panel, #mod-manager-panel { background: linear-gradient(145deg, #2c3e50, #1a252f); border-radius: 20px; padding: 30px 25px; width: 90%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative; box-sizing: border-box; border: 2px solid rgba(255,255,255,0.15); margin-top: 80px; }
-        #settings-close, #mod-manager-close { position: absolute; top: 12px; right: 16px; font-size: 24px; color: #aaa; cursor: pointer; transition: color 0.2s; background: none; border: none; padding: 0; line-height: 1; box-shadow: none; }
-        #settings-close:hover, #mod-manager-close:hover { color: white; background: none; box-shadow: none; }
+        #settings-panel, #mod-manager-panel, #about-panel, #mod-maker-panel, #tutorial-panel { background: linear-gradient(145deg, #2c3e50, #1a252f); border-radius: 20px; padding: 30px 25px; width: 90%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative; box-sizing: border-box; border: 2px solid rgba(255,255,255,0.15); margin-top: 40px; margin-bottom: 40px; }
+        #tutorial-panel { max-width: 520px; }
+        #settings-close, #mod-manager-close, #about-close, #mod-maker-close, #tutorial-close { position: absolute; top: 12px; right: 16px; font-size: 24px; color: #aaa; cursor: pointer; transition: color 0.2s; background: none; border: none; padding: 0; line-height: 1; box-shadow: none; }
+        #settings-close:hover, #mod-manager-close:hover, #about-close:hover, #mod-maker-close:hover, #tutorial-close:hover { color: white; background: none; box-shadow: none; }
         .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; color: white; font-size: 15px; flex-wrap: wrap; gap: 8px; }
         .setting-label { display: flex; align-items: center; gap: 8px; font-weight: 500; }
         .setting-label span { font-size: 18px; }
         #volume-slider { width: 150px; accent-color: #426EFE; cursor: pointer; height: 6px; border-radius: 10px; }
         #volume-value { min-width: 35px; text-align: right; font-weight: bold; color: #ffcc00; }
+        #name-color-input { width: 96px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; color: white; padding: 6px 10px; font-size: 13px; outline: none; text-align: center; letter-spacing: 1px; font-family: 'Courier New', monospace; box-sizing: border-box; }
+        #name-color-input::placeholder { color: #888; }
+        #name-color-input.invalid { border-color: #e74c3c; background: rgba(231,76,60,0.15); }
+        #name-color-preview { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.5); display: inline-block; background: #ffffff; box-shadow: 0 0 6px rgba(0,0,0,0.3); flex-shrink: 0; }
+        #lang-select { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; color: white; padding: 6px 12px; font-size: 14px; outline: none; cursor: pointer; }
+        #lang-select option { background: #2c3e50; color: white; }
         .music-toggle, .autosave-toggle { width: 50px; height: 26px; background: #555; border-radius: 15px; position: relative; cursor: pointer; transition: background 0.3s; flex-shrink: 0; }
         .music-toggle.active, .autosave-toggle.active { background: #4CAF50; }
         .music-toggle::after, .autosave-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: left 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         .music-toggle.active::after, .autosave-toggle.active::after { left: 27px; }
         .settings-divider { height: 1px; background: rgba(255,255,255,0.15); margin: 15px 0 20px; }
-        .settings-hint { color: #888; font-size: 11px; text-align: center; margin-top: 10px; }
-        .mod-list { width: 90%; max-width: 380px; margin-bottom: 20px; }
+        .settings-hint { color: #888; font-size: 11px; text-align: center; margin-top: 10px; line-height: 1.6; }
+        .settings-btn-group { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .settings-btn-group button { flex: 1 1 100px; padding: 10px 8px; font-size: 13px; }
+        .mod-list { width: 100%; margin-bottom: 20px; }
         .mod-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+        .mod-item.equipped { background: rgba(46,204,113,0.18); border: 1px solid rgba(46,204,113,0.4); }
         .mod-info { flex: 1; color: white; font-size: 14px; }
+        .mod-info .mod-name { font-weight: bold; }
+        .mod-info .mod-tag { color: #2ecc71; font-size: 11px; margin-left: 6px; }
+        .mod-info .mod-conflict { color: #f39c12; font-size: 11px; margin-left: 6px; }
         .mod-buttons { display: flex; gap: 6px; }
         .mod-buttons button { padding: 5px 10px; font-size: 12px; border-radius: 5px; min-width: auto; }
-        #mod-status { color: #ddd; font-size: 13px; text-align: center; margin-bottom: 10px; }
+        #mod-status { color: #ddd; font-size: 13px; text-align: center; margin-bottom: 10px; word-break: break-all; }
+        #mod-maker-name { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; color: white; padding: 8px 12px; font-size: 14px; outline: none; }
+        #mod-maker-name::placeholder { color: #888; }
+        .mod-maker-list { width: 100%; margin-bottom: 10px; }
+        .mod-maker-item { display: flex; align-items: center; background: rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; gap: 8px; }
+        .mod-maker-item .mod-maker-info { flex: 1; color: white; font-size: 13px; }
+        .mod-maker-item .mod-maker-name { font-weight: bold; font-size: 14px; }
+        .mod-maker-item .mod-maker-desc { color: #aaa; font-size: 12px; margin-left: 4px; }
+        .mod-maker-item .mod-maker-status { font-size: 18px; width: 24px; text-align: center; }
+        .mod-maker-item button { padding: 6px 12px; font-size: 12px; min-width: 60px; margin: 0; }
+        .mod-maker-create-btn { width: 100%; padding: 12px; font-size: 14px; margin-top: 10px; }
         .bubble { position: absolute; bottom: -50px; border: 2px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.2); border-radius: 50%; animation: rise linear forwards; z-index: 2; pointer-events: none; }
         @keyframes rise { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(-120vh); opacity: 0; } }
         #pet-hand { position: absolute; font-size: 60px; pointer-events: auto; cursor: move; z-index: 200; display: none; touch-action: none; }
@@ -114,6 +125,23 @@
         #revive-panel p { margin: 0 0 20px; font-size: 14px; }
         #revive-panel button { margin: 0 8px; padding: 8px 20px; font-size: 14px; }
         #feed-btn-top { position: absolute; top: 20px; left: 20px; background: #FF8C00; padding: 10px 18px; border-radius: 20px; font-size: 16px; z-index: 30; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .about-info { color: #ddd; font-size: 15px; line-height: 1.8; text-align: center; margin-bottom: 20px; }
+        .about-version { color: #ffcc00; font-size: 14px; text-align: center; margin-bottom: 20px; }
+        .about-download-btn { width: 100%; padding: 12px; background: #4CAF50; font-size: 16px; }
+        .tutorial-section { color: white; text-align: left; margin-bottom: 20px; background: rgba(255,255,255,0.05); padding: 14px 16px; border-radius: 10px; }
+        .tutorial-section h3 { margin: 0 0 10px; font-size: 16px; color: #ffcc00; }
+        .tutorial-section p, .tutorial-section li { font-size: 13px; line-height: 1.7; color: #ddd; margin: 4px 0; }
+        .tutorial-section ul { margin: 6px 0; padding-left: 20px; }
+        .tutorial-section code { background: rgba(255,255,255,0.15); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: #7ee; }
+        #edit-overlay { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; z-index: 99998; background: rgba(0,0,0,0.75); padding: 10px 14px; border-radius: 25px; align-items: center; box-shadow: 0 6px 20px rgba(0,0,0,0.4); backdrop-filter: blur(6px); }
+        #edit-overlay.show { display: flex; }
+        #edit-overlay .edit-hint { color: white; font-size: 13px; margin-right: 6px; max-width: 220px; }
+        #edit-overlay button { padding: 8px 14px; font-size: 13px; border-radius: 20px; }
+        body.edit-mode .game-btn { position: fixed !important; cursor: move; outline: 3px dashed #ffcc00; outline-offset: 3px; z-index: 9999 !important; margin: 0 !important; transform: none !important; animation: editPulse 1.6s ease-in-out infinite; }
+        body.edit-mode .game-btn::before { content: '✥'; position: absolute; top: -10px; right: -10px; font-size: 12px; background: #ffcc00; color: #333; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10000; }
+        .game-btn.btn-detached { position: fixed !important; z-index: 9999; margin: 0 !important; transform: none !important; }
+        .game-btn.dragging { z-index: 99999 !important; opacity: 0.95; transform: scale(1.08) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important; }
+        @keyframes editPulse { 0%, 100% { outline-color: #ffcc00; } 50% { outline-color: rgba(255,204,0,0.4); } }
     </style>
 </head>
 <body>
@@ -129,165 +157,298 @@
     <div id="pet-hand">🤚🏻</div>
     <div id="bath-sponge">🧽</div>
     <div id="hud">
-        <div class="token-wrapper">
-            <span class="fatigue-label">疲劳值:</span>
-            <div id="token-bar-bg"><div id="token-bar"></div></div>
-            <span id="token-percent">100%</span>
-        </div>
-        <div id="status-row">
-            <div id="status">状态：正常开心</div>
-            <div id="currencies"><span id="coins">🪙：50</span><span id="diamonds">💎：0</span></div>
-        </div>
+        <div class="token-wrapper"><span class="fatigue-label" data-i18n="hud-fatigue">疲劳值:</span><div id="token-bar-bg"><div id="token-bar"></div></div><span id="token-percent">100%</span></div>
+        <div id="status-row"><div id="status" data-i18n="status-happy">状态：正常开心</div><div id="currencies"><span id="coins">🪙：50</span><span id="diamonds">💎：0</span></div></div>
         <div id="countdown"></div>
     </div>
-
     <div id="shop">
         <div class="shop-header" onclick="toggleShop()">✖</div>
-        <h3>帽子装扮</h3>
+        <h3 data-i18n="shop-hats-title">帽子装扮</h3>
         <div class="hat-list">
-            <div class="hat-item"><div class="hat-info"><div class="hat-name">👑 皇冠 (30🪙)</div><div class="hat-desc">Token消耗速度减半</div></div><button id="hat-crown" onclick="buyOrWearHat('👑', 30, 'crown', this)">购买</button></div>
-            <div class="hat-item"><div class="hat-info"><div class="hat-name">🎩 礼帽 (20🪙)</div><div class="hat-desc">抚摸时增加3点Token</div></div><button id="hat-tophat" onclick="buyOrWearHat('🎩', 20, 'tophat', this)">购买</button></div>
-            <div class="hat-item"><div class="hat-info"><div class="hat-name">🎓 学士帽 (25🪙)</div><div class="hat-desc">抚摸时额外增加5点Token</div></div><button id="hat-grad" onclick="buyOrWearHat('🎓', 25, 'grad', this)">购买</button></div>
-            <div class="hat-item"><div class="hat-info"><div class="hat-name">👒 遮阳帽 (15🪙)</div><div class="hat-desc">抚摸时额外增加1🪙</div></div><button id="hat-sun" onclick="buyOrWearHat('👒', 15, 'sun', this)">购买</button></div>
-            <div class="hat-item"><div class="hat-info"><div class="hat-name">🧢 鸭舌帽 (10🪙)</div><div class="hat-desc">喂食时Token增加更多</div></div><button id="hat-cap" onclick="buyOrWearHat('🧢', 10, 'cap', this)">购买</button></div>
+            <div class="hat-item"><div class="hat-info"><div class="hat-name" data-i18n="hat-crown-name">👑 皇冠 (30🪙)</div><div class="hat-desc" data-i18n="hat-crown-desc">Token消耗速度减半</div></div><button id="hat-crown" onclick="buyOrWearHat('👑', 30, 'crown', this)" data-i18n="btn-buy">购买</button></div>
+            <div class="hat-item"><div class="hat-info"><div class="hat-name" data-i18n="hat-tophat-name">🎩 礼帽 (20🪙)</div><div class="hat-desc" data-i18n="hat-tophat-desc">抚摸时增加3点Token</div></div><button id="hat-tophat" onclick="buyOrWearHat('🎩', 20, 'tophat', this)" data-i18n="btn-buy">购买</button></div>
+            <div class="hat-item"><div class="hat-info"><div class="hat-name" data-i18n="hat-grad-name">🎓 学士帽 (25🪙)</div><div class="hat-desc" data-i18n="hat-grad-desc">抚摸时额外增加5点Token</div></div><button id="hat-grad" onclick="buyOrWearHat('🎓', 25, 'grad', this)" data-i18n="btn-buy">购买</button></div>
+            <div class="hat-item"><div class="hat-info"><div class="hat-name" data-i18n="hat-sun-name">👒 遮阳帽 (15🪙)</div><div class="hat-desc" data-i18n="hat-sun-desc">抚摸时额外增加1🪙</div></div><button id="hat-sun" onclick="buyOrWearHat('👒', 15, 'sun', this)" data-i18n="btn-buy">购买</button></div>
+            <div class="hat-item"><div class="hat-info"><div class="hat-name" data-i18n="hat-cap-name">🧢 鸭舌帽 (10🪙)</div><div class="hat-desc" data-i18n="hat-cap-desc">喂食时Token增加更多</div></div><button id="hat-cap" onclick="buyOrWearHat('🧢', 10, 'cap', this)" data-i18n="btn-buy">购买</button></div>
         </div>
     </div>
-
     <div id="food-shop">
         <div class="shop-header" onclick="toggleFoodShop()">✖</div>
-        <button id="feed-btn-top" onclick="openFeedPanel()">🍽️ 喂食</button>
-        <h3>🍽️ 食物商店</h3>
+        <button id="feed-btn-top" onclick="openFeedPanel()" data-i18n="btn-feed-top">🍽️ 喂食</button>
+        <h3 data-i18n="shop-food-title">🍽️ 食物商店</h3>
         <div class="food-list">
-            <div style="color:white;margin-bottom:15px;text-align:center;">今日免费领取：<span id="free-apple-count">3</span> 个🍎</div>
-            <div class="food-item"><div class="food-info"><div class="food-name">🍎 苹果 (免费)</div><div class="food-desc">恢复体力</div></div><button id="btn-free-apple" onclick="claimFreeApple()">领取</button></div>
-            <div class="food-item"><div class="food-info"><div class="food-name">🐟 鱼 (20🪙)</div><div class="food-desc">美味可口</div></div><button onclick="buyFood('🐟', 20, 'coins', 30)">购买</button></div>
-            <div class="food-item"><div class="food-info"><div class="food-name">🍉 西瓜 (25🪙)</div><div class="food-desc">清凉解渴</div></div><button onclick="buyFood('🍉', 25, 'coins', 35)">购买</button></div>
-            <div class="food-item"><div class="food-info"><div class="food-name">🍔 汉堡 (30🪙)</div><div class="food-desc">高热量</div></div><button onclick="buyFood('🍔', 30, 'coins', 45)">购买</button></div>
-            <div class="food-item"><div class="food-info"><div class="food-name">🍞 面包 (10🪙)</div><div class="food-desc">简单充饥</div></div><button onclick="buyFood('🍞', 10, 'coins', 15)">购买</button></div>
-            <div class="food-item"><div class="food-info"><div class="food-name">🍯 蜂蜜 (5💎)</div><div class="food-desc">珍贵营养</div></div><button onclick="buyFood('🍯', 5, 'diamonds', 50)">购买</button></div>
-            <div class="food-item"><div class="food-info"><div class="food-name">🍰 蛋糕 (10💎)</div><div class="food-desc">豪华大餐</div></div><button onclick="buyFood('🍰', 10, 'diamonds', 65)">购买</button></div>
+            <div style="color:white;margin-bottom:15px;text-align:center;"><span data-i18n="free-apple-today">今日免费领取：</span><span id="free-apple-count">3</span><span data-i18n="free-apple-unit"> 个🍎</span></div>
+            <div class="food-item"><div class="food-info"><div class="food-name" data-i18n="food-apple-free">🍎 苹果 (免费)</div><div class="food-desc" data-i18n="food-apple-desc">恢复体力</div></div><button id="btn-free-apple" onclick="claimFreeApple()" data-i18n="btn-claim">领取</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name" data-i18n="food-fish">🐟 鱼 (20🪙)</div><div class="food-desc" data-i18n="food-fish-desc">美味可口</div></div><button onclick="buyFood('🐟', 20, 'coins', 30)" data-i18n="btn-buy">购买</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name" data-i18n="food-watermelon">🍉 西瓜 (25🪙)</div><div class="food-desc" data-i18n="food-watermelon-desc">清凉解渴</div></div><button onclick="buyFood('🍉', 25, 'coins', 35)" data-i18n="btn-buy">购买</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name" data-i18n="food-burger">🍔 汉堡 (30🪙)</div><div class="food-desc" data-i18n="food-burger-desc">高热量</div></div><button onclick="buyFood('🍔', 30, 'coins', 45)" data-i18n="btn-buy">购买</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name" data-i18n="food-bread">🍞 面包 (10🪙)</div><div class="food-desc" data-i18n="food-bread-desc">简单充饥</div></div><button onclick="buyFood('🍞', 10, 'coins', 15)" data-i18n="btn-buy">购买</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name" data-i18n="food-honey">🍯 蜂蜜 (5💎)</div><div class="food-desc" data-i18n="food-honey-desc">珍贵营养</div></div><button onclick="buyFood('🍯', 5, 'diamonds', 50)" data-i18n="btn-buy">购买</button></div>
+            <div class="food-item"><div class="food-info"><div class="food-name" data-i18n="food-cake">🍰 蛋糕 (10💎)</div><div class="food-desc" data-i18n="food-cake-desc">豪华大餐</div></div><button onclick="buyFood('🍰', 10, 'diamonds', 65)" data-i18n="btn-buy">购买</button></div>
         </div>
     </div>
-
-    <div id="feed-panel">
-        <div class="shop-header" onclick="closeFeedPanel()">✖</div>
-        <h3>🥄 选择食物喂食</h3>
-        <div class="feed-list" id="feed-list"></div>
-    </div>
-
+    <div id="feed-panel"><div class="shop-header" onclick="closeFeedPanel()">✖</div><h3 data-i18n="feed-panel-title">🥄 选择食物喂食</h3><div class="feed-list" id="feed-list"></div></div>
     <div id="settings-modal">
         <div id="settings-panel">
             <button id="settings-close" onclick="closeSettings()">✖</button>
-            <h2>⚙️ 设置</h2>
-            <div class="setting-row">
-                <div class="setting-label"><span>🔊</span> 音量调节</div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1">
-                    <span id="volume-value">100%</span>
-                </div>
-            </div>
-            <div class="setting-row">
-                <div class="setting-label"><span>🎵</span> 背景音乐</div>
-                <div class="music-toggle" id="music-toggle" onclick="toggleMusic()"></div>
-            </div>
-            <div class="setting-row">
-                <div class="setting-label"><span>💾</span> 自动保存</div>
-                <div class="autosave-toggle" id="autosave-toggle" onclick="toggleAutoSave()"></div>
-            </div>
+            <h2 data-i18n="settings-title">⚙️ 设置</h2>
+            <div class="setting-row"><div class="setting-label"><span>🔊</span> <span data-i18n="label-volume">音量调节</span></div><div style="display:flex;align-items:center;gap:8px;"><input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1"><span id="volume-value">100%</span></div></div>
+            <div class="setting-row"><div class="setting-label"><span>🎵</span> <span data-i18n="label-music">背景音乐</span></div><div class="music-toggle" id="music-toggle" onclick="toggleMusic()"></div></div>
+            <div class="setting-row"><div class="setting-label"><span>💾</span> <span data-i18n="label-autosave">自动保存</span></div><div class="autosave-toggle" id="autosave-toggle" onclick="toggleAutoSave()"></div></div>
+            <div class="setting-row"><div class="setting-label"><span>🎨</span> <span data-i18n="label-namecolor">名字颜色</span></div><div style="display:flex;align-items:center;gap:8px;"><input type="text" id="name-color-input" maxlength="7" placeholder="#ffffff" autocomplete="off" spellcheck="false"><span id="name-color-preview"></span></div></div>
+            <div class="setting-row"><div class="setting-label"><span>🌐</span> <span data-i18n="label-lang">语言</span></div><select id="lang-select" onchange="setLanguage(this.value)"><option value="zh">中文</option><option value="en">English</option></select></div>
             <div class="settings-divider"></div>
-            <div class="setting-row" style="justify-content:center; gap: 8px; flex-wrap: wrap;">
-                <button onclick="saveGame(); closeSettings();" style="background:#4CAF50;padding:8px 15px;">💾 保存</button>
-                <button onclick="exitGame()" style="background:#f44336;padding:8px 15px;">🚪 退出</button>
-                <button onclick="openModManager()" style="background:#8e44ad;padding:8px 15px;">🧩 模组</button>
-                <button id="fullscreen-toggle-btn" onclick="toggleFullscreen()" style="background:#3498db;padding:8px 15px;">⛶ 全屏</button>
+            <div class="settings-btn-group">
+                <button onclick="saveGame(); closeSettings();" style="background:#4CAF50;" data-i18n="btn-save">💾 保存</button>
+                <button onclick="exitGame()" style="background:#f44336;" data-i18n="btn-exit">🚪 退出</button>
+                <button onclick="openModManager()" style="background:#8e44ad;" data-i18n="btn-mods">🧩 模组</button>
+                <button onclick="openModMaker()" style="background:#e67e22;" data-i18n="btn-make-mod">🛠️ 制作模组</button>
+                <button id="fullscreen-toggle-btn" onclick="toggleFullscreen()" style="background:#3498db;" data-i18n="btn-fullscreen">⛶ 全屏</button>
+                <button onclick="goToAbout()" style="background:#f39c12;" data-i18n="btn-about">ℹ️ 关于</button>
+                <button onclick="goToConvert()" style="background:#16a085;" data-i18n="btn-convert">🔄 转换</button>
+                <button onclick="openTutorial()" style="background:#9b59b6;" data-i18n="btn-tutorial">📖 教程</button>
             </div>
-            <div class="settings-hint">点击虎鲸头顶的名字可以直接修改</div>
+            <div class="settings-hint" data-i18n="hint-settings">点击虎鲸头顶的名字可以直接修改</div>
         </div>
     </div>
-
     <div id="mod-manager-modal">
         <div id="mod-manager-panel">
             <button id="mod-manager-close" onclick="closeModManager()">✖</button>
-            <h2>🧩 模组管理</h2>
-            <div id="mod-status">当前未装备任何模组</div>
-            <div class="setting-row">
-                <button id="mod-upload-btn" onclick="document.getElementById('mod-file-input').click()" style="background:#3498db;">📁 上传ZIP模组</button>
-                <input type="file" id="mod-file-input" accept=".zip" style="display:none" onchange="handleModUpload(event)">
-            </div>
+            <h2 data-i18n="mod-manager-title">🧩 模组管理</h2>
+            <div id="mod-status" data-i18n="mod-status-none">当前未装备任何模组</div>
+            <div class="setting-row"><button id="mod-upload-btn" onclick="document.getElementById('mod-file-input').click()" style="background:#3498db;" data-i18n="btn-upload-zip">📁 上传ZIP模组</button><input type="file" id="mod-file-input" accept=".zip" style="display:none" onchange="handleModUpload(event)"></div>
             <div class="mod-list" id="mod-list"></div>
-            <div class="settings-hint">ZIP需包含：1.gif, 1.png~8.png, 1.mp3, 1.woff2。缺少的文件将使用默认资源。</div>
+            <div class="settings-hint" data-i18n="mod-manager-hint">ZIP需包含：1.gif, 1.png~8.png, 1.mp3, 1.woff2。缺少的文件将使用默认资源。可同时装备多个模组，同名文件以后装备的为准。</div>
         </div>
     </div>
-
+    <div id="mod-maker-modal">
+        <div id="mod-maker-panel">
+            <button id="mod-maker-close" onclick="closeModMaker()">✖</button>
+            <h2 data-i18n="mod-maker-title">🛠️ 制作模组</h2>
+            <div class="setting-row" style="margin-bottom:15px;"><div class="setting-label"><span>📝</span> <span data-i18n="label-mod-name">模组名称</span></div><input type="text" id="mod-maker-name" maxlength="30" placeholder="输入模组名称" autocomplete="off"></div>
+            <div class="mod-maker-list" id="mod-maker-list"></div>
+            <div class="settings-hint" id="mod-maker-hint" data-i18n="mod-maker-hint">请上传资源文件（可部分上传，缺失的将用原始资源）</div>
+        </div>
+    </div>
+    <div id="tutorial-modal"><div id="tutorial-panel"><button id="tutorial-close" onclick="closeTutorial()">✖</button><h2 data-i18n="tutorial-title">📖 新手教程</h2><div id="tutorial-content"></div></div></div>
+    <div id="about-modal">
+        <div id="about-panel">
+            <button id="about-close" onclick="closeAbout()">✖</button>
+            <h2 data-i18n="about-title">ℹ️ 关于应用</h2>
+            <div class="about-info" data-i18n="about-info">赛博打工鲸：深海饲养员<br>一款可爱的虎鲸养成游戏</div>
+            <div class="about-version" id="about-version-text">版本：1.0</div>
+            <button class="about-download-btn" id="about-download-btn" onclick="downloadApp()" data-i18n="btn-download">📥 下载应用</button>
+            <div class="settings-hint" id="about-update-hint" style="display:none;" data-i18n="about-update-hint">检测到新版本可用！</div>
+        </div>
+    </div>
     <div id="controls">
-        <button class="game-btn" id="btn-food" onclick="toggleFoodShop()">🍎 食物</button>
-        <button class="game-btn" id="btn-pet" onclick="pet()">🤚 抚摸</button>
-        <button class="game-btn" id="btn-bath" onclick="bathe()">🧽 洗澡</button>
-        <button class="game-btn" id="btn-lift" onclick="lift()">🏋 锻炼</button>
-        <button class="game-btn" id="btn-shop" onclick="toggleShop()">🎩 装扮</button>
-        <button class="game-btn" id="btn-run" onclick="openRunGame()">🏃 跑酷</button>
+        <button class="game-btn" id="btn-food" onclick="toggleFoodShop()" data-i18n="btn-food">🍎 食物</button>
+        <button class="game-btn" id="btn-pet" onclick="pet()" data-i18n="btn-pet">🤚 抚摸</button>
+        <button class="game-btn" id="btn-bath" onclick="bathe()" data-i18n="btn-bath">🧽 洗澡</button>
+        <button class="game-btn" id="btn-lift" onclick="lift()" data-i18n="btn-lift">🏋 锻炼</button>
+        <button class="game-btn" id="btn-shop" onclick="toggleShop()" data-i18n="btn-shop">🎩 装扮</button>
+        <button class="game-btn" id="btn-run" onclick="openRunGame()" data-i18n="btn-run">🏃 跑酷</button>
     </div>
     <div id="right-buttons">
         <button onclick="openSettings()" title="设置">⚙️</button>
+        <button onclick="toggleEditMode()" id="btn-edit-layout" title="编辑布局">✏️</button>
     </div>
-
+    <div id="edit-overlay">
+        <div class="edit-hint" data-i18n="edit-hint">✏️ 拖动按钮到任意位置</div>
+        <button onclick="toggleEditMode()" style="background:#4CAF50;" data-i18n="edit-done">✅ 完成</button>
+        <button onclick="resetButtonLayout()" style="background:#e67e22;" data-i18n="edit-reset">↩️ 重置</button>
+    </div>
     <audio id="bgm" loop preload="none"><source src="1.mp3" type="audio/mpeg"></audio>
-
     <div id="run-game">
-        <div id="difficulty-select">
-            <h2>选择难度</h2>
-            <button onclick="startRunGame('easy')">简单</button>
-            <button onclick="startRunGame('normal')">普通</button>
-            <button onclick="startRunGame('hard')">困难</button>
-        </div>
+        <div id="difficulty-select"><h2 data-i18n="diff-title">选择难度</h2><button onclick="startRunGame('easy')" data-i18n="diff-easy">简单</button><button onclick="startRunGame('normal')" data-i18n="diff-normal">普通</button><button onclick="startRunGame('hard')" data-i18n="diff-hard">困难</button></div>
         <div id="run-area"><div class="run-ground"></div></div>
         <div id="run-exit" onclick="closeRunGame()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"><span>✖</span></div>
         <div id="run-ui" class="run-ui">钻石：0</div>
-        <div id="instruction">点击⬆按钮或按空格跳跃</div>
+        <div id="instruction" data-i18n="run-instruction">点击⬆按钮或按空格跳跃</div>
         <div id="jump-btn" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="triggerJump()">⬆</div>
-        <div id="game-over-screen">
-            <h2>游戏结束</h2>
-            <p id="final-score">获得钻石：0</p>
-            <button onclick="restartRun()">🔄 重新开始</button>
-        </div>
-        <div id="revive-modal">
-            <div id="revive-panel">
-                <h3>💎 复活机会</h3>
-                <p>消耗 10 颗钻石可以立即复活！<br>当前钻石：<span id="revive-diamonds">0</span></p>
-                <button onclick="useRevive()" style="background:#4CAF50;">复活 (消耗10💎)</button>
-                <button onclick="giveUpRevive()" style="background:#f44336;">放弃</button>
-            </div>
-        </div>
+        <div id="game-over-screen"><h2 data-i18n="game-over-title">游戏结束</h2><p id="final-score">获得钻石：0</p><button onclick="restartRun()" data-i18n="btn-restart">🔄 重新开始</button></div>
+        <div id="revive-modal"><div id="revive-panel"><h3 data-i18n="revive-title">💎 复活机会</h3><p><span data-i18n="revive-desc">消耗 10 颗钻石可以立即复活！</span><br><span data-i18n="revive-current">当前钻石：</span><span id="revive-diamonds">0</span></p><button onclick="useRevive()" style="background:#4CAF50;" data-i18n="btn-revive">复活 (消耗10💎)</button><button onclick="giveUpRevive()" style="background:#f44336;" data-i18n="btn-give-up">放弃</button></div></div>
     </div>
 
     <script>
-        // ============ 全局变量 ============
-        var token = 100;
-        var coins = 50;
-        var diamonds = 0;
-        var whaleName = 'DeepSeek';
-        var currentHat = '';
-        var hatType = '';
-        var ownedHats = {};
-        var foodInventory = {};
-        var isSleeping = false;
-        var isSad = false;
-        var isPetting = false;
-        var isBathing = false;
-        var petTimer, sleepTimer, intervalTimer, bathTimer, cleanlinessTimer;
-        var actionLocked = false;
-        var actionLockTimer = null;
-        var autoSaveEnabled = false;
-        var autoSaveInterval = null;
-        const AUTO_SAVE_DELAY = 30000;
-        var freeAppleCount = 3;
-        var lastFreeDate = '';
-        var cleanliness = 100;
+        var I18N = {
+            zh: {
+                'settings-title': '⚙️ 设置','label-volume': '音量调节','label-music': '背景音乐','label-autosave': '自动保存','label-namecolor': '名字颜色','label-lang': '语言','label-mod-name': '模组名称',
+                'btn-save': '💾 保存','btn-exit': '🚪 退出','btn-mods': '🧩 模组','btn-make-mod': '🛠️ 制作模组','btn-fullscreen': '⛶ 全屏','btn-about': 'ℹ️ 关于','btn-convert': '🔄 转换','btn-tutorial': '📖 教程','btn-edit-layout': '✏️ 编辑布局','btn-upload-zip': '📁 上传ZIP模组','btn-buy': '购买','btn-claim': '领取','btn-download': '📥 下载应用','btn-restart': '🔄 重新开始','btn-revive': '复活 (消耗10💎)','btn-give-up': '放弃','btn-feed-top': '🍽️ 喂食',
+                'hint-settings': '点击虎鲸头顶的名字可以直接修改','hud-fatigue': '疲劳值:',
+                'status-happy': '状态：正常开心','status-hungry': '状态：饿得伤心了...','status-tired': '状态：举铁太累，流汗了','status-dirty': '状态：脏兮兮的，需要洗澡！','status-server-busy': '状态：服务器繁忙！','status-bathing': '状态：正在洗澡🧽...','status-clean': '状态：洗得干干净净！','status-exercising': '状态：正在疯狂举铁！','status-server-restart': '重启冷却中：剩余 ','status-server-restart-unit': ' 秒',
+                'shop-hats-title': '帽子装扮','shop-food-title': '🍽️ 食物商店','feed-panel-title': '🥄 选择食物喂食',
+                'hat-crown-name': '👑 皇冠 (30🪙)','hat-crown-desc': 'Token消耗速度减半','hat-tophat-name': '🎩 礼帽 (20🪙)','hat-tophat-desc': '抚摸时增加3点Token','hat-grad-name': '🎓 学士帽 (25🪙)','hat-grad-desc': '抚摸时额外增加5点Token','hat-sun-name': '👒 遮阳帽 (15🪙)','hat-sun-desc': '抚摸时额外增加1🪙','hat-cap-name': '🧢 鸭舌帽 (10🪙)','hat-cap-desc': '喂食时Token增加更多',
+                'free-apple-today': '今日免费领取：','free-apple-unit': ' 个🍎',
+                'food-apple-free': '🍎 苹果 (免费)','food-apple-desc': '恢复体力','food-fish': '🐟 鱼 (20🪙)','food-fish-desc': '美味可口','food-watermelon': '🍉 西瓜 (25🪙)','food-watermelon-desc': '清凉解渴','food-burger': '🍔 汉堡 (30🪙)','food-burger-desc': '高热量','food-bread': '🍞 面包 (10🪙)','food-bread-desc': '简单充饥','food-honey': '🍯 蜂蜜 (5💎)','food-honey-desc': '珍贵营养','food-cake': '🍰 蛋糕 (10💎)','food-cake-desc': '豪华大餐',
+                'mod-manager-title': '🧩 模组管理','mod-manager-hint': 'ZIP需包含：1.gif, 1.png~8.png, 1.mp3, 1.woff2。缺少的文件将使用默认资源。可同时装备多个模组，同名文件以后装备的为准。','mod-status-none': '当前未装备任何模组','mod-status-equipped': '已装备 ','mod-status-equipped-unit': ' 个模组：',
+                'mod-maker-title': '🛠️ 制作模组','mod-maker-hint': '请上传资源文件（可部分上传，缺失的将用原始资源）','mod-maker-uploaded': '已上传 ','mod-maker-of': ' / ','mod-maker-files': ' 个文件','mod-maker-missing-suffix': '（缺失的将使用原始资源）','mod-maker-ready': '，可以生成模组了','mod-maker-upload-btn': '上传','mod-maker-reselect': '重选','mod-maker-create': '✨ 生成模组','mod-maker-create-with-missing': '✨ 生成模组（','mod-maker-create-with-missing-unit': ' 项将用原始资源）','mod-maker-please-upload': '请至少上传一个文件',
+                'mod-list-empty': '暂无模组，请上传ZIP文件或制作模组','mod-tag-equipped': '已装备','mod-tag-conflict': '⚠️ ','mod-tag-conflict-unit': ' 个文件与已装备模组冲突','mod-btn-equip': '装备','mod-btn-unequip': '卸下','mod-btn-delete': '删除',
+                'food-apple': '苹果','food-fish-name': '鱼','food-watermelon-name': '西瓜','food-burger-name': '汉堡','food-bread-name': '面包','food-honey-name': '蜂蜜','food-cake-name': '蛋糕','feed-restore': '恢复体力','feed-btn': '喂食','feed-none': '无',
+                'tutorial-title': '📖 新手教程','edit-hint': '✏️ 拖动按钮到任意位置','edit-done': '✅ 完成','edit-reset': '↩️ 重置',
+                'diff-title': '选择难度','diff-easy': '简单','diff-normal': '普通','diff-hard': '困难','run-instruction': '点击⬆按钮或按空格跳跃','game-over-title': '游戏结束','revive-title': '💎 复活机会','revive-desc': '消耗 10 颗钻石可以立即复活！','revive-current': '当前钻石：','run-diamonds': '钻石：','game-over-diamonds': '获得钻石：',
+                'about-title': 'ℹ️ 关于应用','about-info': '赛博打工鲸：深海饲养员<br>一款可爱的虎鲸养成游戏','about-update-hint': '检测到新版本可用！',
+                'btn-food': '🍎 食物','btn-pet': '🤚 抚摸','btn-bath': '🧽 洗澡','btn-lift': '🏋 锻炼','btn-shop': '🎩 装扮','btn-run': '🏃 跑酷'
+            },
+            en: {
+                'settings-title': '⚙️ Settings','label-volume': 'Volume','label-music': 'Background Music','label-autosave': 'Auto Save','label-namecolor': 'Name Color','label-lang': 'Language','label-mod-name': 'Mod Name',
+                'btn-save': '💾 Save','btn-exit': '🚪 Exit','btn-mods': '🧩 Mods','btn-make-mod': '🛠️ Make Mod','btn-fullscreen': '⛶ Fullscreen','btn-about': 'ℹ️ About','btn-convert': '🔄 Convert','btn-tutorial': '📖 Tutorial','btn-edit-layout': '✏️ Edit Layout','btn-upload-zip': '📁 Upload ZIP Mod','btn-buy': 'Buy','btn-claim': 'Claim','btn-download': '📥 Download App','btn-restart': '🔄 Restart','btn-revive': 'Revive (10💎)','btn-give-up': 'Give Up','btn-feed-top': '🍽️ Feed',
+                'hint-settings': 'Click the whale name above to edit it','hud-fatigue': 'Fatigue:',
+                'status-happy': 'Status: Happy','status-hungry': 'Status: Hungry...','status-tired': 'Status: Tired & sweaty','status-dirty': 'Status: Dirty, needs a bath!','status-server-busy': 'Status: Server busy!','status-bathing': 'Status: Bathing🧽...','status-clean': 'Status: Sparkling clean!','status-exercising': 'Status: Working out!','status-server-restart': 'Restarting in ','status-server-restart-unit': 's',
+                'shop-hats-title': 'Hat Accessories','shop-food-title': '🍽️ Food Shop','feed-panel-title': '🥄 Choose Food to Feed',
+                'hat-crown-name': '👑 Crown (30🪙)','hat-crown-desc': 'Token consumption halved','hat-tophat-name': '🎩 Top Hat (20🪙)','hat-tophat-desc': '+3 Token when petting','hat-grad-name': '🎓 Grad Cap (25🪙)','hat-grad-desc': '+5 Token when petting','hat-sun-name': '👒 Sun Hat (15🪙)','hat-sun-desc': '+1🪙 when petting','hat-cap-name': '🧢 Cap (10🪙)','hat-cap-desc': 'More Token from feeding',
+                'free-apple-today': 'Free today: ','free-apple-unit': ' 🍎',
+                'food-apple-free': '🍎 Apple (Free)','food-apple-desc': 'Restore fatigue','food-fish': '🐟 Fish (20🪙)','food-fish-desc': 'Delicious','food-watermelon': '🍉 Watermelon (25🪙)','food-watermelon-desc': 'Cool & refreshing','food-burger': '🍔 Burger (30🪙)','food-burger-desc': 'High calorie','food-bread': '🍞 Bread (10🪙)','food-bread-desc': 'Simple snack','food-honey': '🍯 Honey (5💎)','food-honey-desc': 'Precious nutrition','food-cake': '🍰 Cake (10💎)','food-cake-desc': 'Luxury meal',
+                'mod-manager-title': '🧩 Mod Manager','mod-manager-hint': 'ZIP should contain: 1.gif, 1.png~8.png, 1.mp3, 1.woff2. Missing files use defaults. Multiple mods can be equipped; later-equipped mods override same-name files.','mod-status-none': 'No mod equipped','mod-status-equipped': 'Equipped ','mod-status-equipped-unit': ' mod(s): ',
+                'mod-maker-title': '🛠️ Make Mod','mod-maker-hint': 'Upload resource files (partial allowed, missing ones use originals)','mod-maker-uploaded': 'Uploaded ','mod-maker-of': ' / ','mod-maker-files': ' files','mod-maker-missing-suffix': ' (missing ones use originals)','mod-maker-ready': ', ready to create','mod-maker-upload-btn': 'Upload','mod-maker-reselect': 'Reselect','mod-maker-create': '✨ Create Mod','mod-maker-create-with-missing': '✨ Create Mod (','mod-maker-create-with-missing-unit': ' missing use originals)','mod-maker-please-upload': 'Upload at least one file',
+                'mod-list-empty': 'No mods yet. Upload a ZIP or make a mod.','mod-tag-equipped': 'Equipped','mod-tag-conflict': '⚠️ ','mod-tag-conflict-unit': ' files conflict','mod-btn-equip': 'Equip','mod-btn-unequip': 'Unequip','mod-btn-delete': 'Delete',
+                'food-apple': 'Apple','food-fish-name': 'Fish','food-watermelon-name': 'Watermelon','food-burger-name': 'Burger','food-bread-name': 'Bread','food-honey-name': 'Honey','food-cake-name': 'Cake','feed-restore': 'Restore fatigue','feed-btn': 'Feed','feed-none': 'None',
+                'tutorial-title': '📖 Tutorial','edit-hint': '✏️ Drag buttons anywhere','edit-done': '✅ Done','edit-reset': '↩️ Reset',
+                'diff-title': 'Select Difficulty','diff-easy': 'Easy','diff-normal': 'Normal','diff-hard': 'Hard','run-instruction': 'Tap ⬆ or press Space to jump','game-over-title': 'Game Over','revive-title': '💎 Revive','revive-desc': 'Spend 10 diamonds to revive!','revive-current': 'Diamonds: ','run-diamonds': 'Diamonds: ','game-over-diamonds': 'Diamonds earned: ',
+                'about-title': 'ℹ️ About','about-info': 'Cyber Whale: Deep Sea Keeper<br>A cute orca raising game','about-update-hint': 'New version available!',
+                'btn-food': '🍎 Food','btn-pet': '🤚 Pet','btn-bath': '🧽 Bath','btn-lift': '🏋 Train','btn-shop': '🎩 Hats','btn-run': '🏃 Run'
+            }
+        };
 
-        var modList = [];
-        var currentModId = null;
-        var modBlobUrls = {};
-        var modFontStyleTag = null;
+        var TUTORIAL_HTML = {
+            zh: `
+                <div class="tutorial-section"><h3>🐋 一、如何饲养小鲸鱼</h3><ul>
+                    <li><b>疲劳值（Token）</b>：鲸鱼的核心状态。随时间会慢慢下降，降到 0 会进入「服务器繁忙」冷却 60 秒。</li>
+                    <li><b>🍎 食物</b>：购买或领取食物，打开「喂食」面板投喂，可恢复疲劳值。</li>
+                    <li><b>🤚 抚摸</b>：长按拖动 🤚 图标在鲸鱼身上抚摸，10 秒内持续获得 Token 和金币。</li>
+                    <li><b>🏋 锻炼</b>：消耗 15 Token 让鲸鱼运动，会短暂流汗。</li>
+                    <li><b>🧽 洗澡</b>：当清洁度低于 30 时才可用，拖动 🧽 搓洗 10 秒恢复干净。</li>
+                    <li><b>🏃 跑酷</b>：赚钻石的小游戏，撞到障碍会扣血，攒够 10 钻石可原地复活。</li>
+                </ul></div>
+                <div class="tutorial-section"><h3>🪙 二、货币与装扮</h3><ul>
+                    <li><b>金币 🪙</b>：抚摸鲸鱼、每日免费苹果等获得，用于买帽子和食物。</li>
+                    <li><b>钻石 💎</b>：跑酷小游戏中收集，用于复活或购买蜂蜜、蛋糕。</li>
+                    <li><b>帽子</b>：不同帽子有不同加成（皇冠省 Token、礼帽加抚摸收益、鸭舌帽加喂食收益等）。</li>
+                </ul></div>
+                <div class="tutorial-section"><h3>📦 三、模组文件对照表</h3><p>制作模组时，以下文件名对应游戏里的具体资源：</p><ul>
+                    <li><code>1.gif</code> —— 正常状态（默认形象）</li>
+                    <li><code>1.png</code> —— 锻炼时</li>
+                    <li><code>2.png</code> —— 睡觉 / 服务器繁忙</li>
+                    <li><code>3.png</code> —— 流汗（低 Token）</li>
+                    <li><code>4.png</code> —— 流泪（极度饥饿）</li>
+                    <li><code>5.png</code> —— 抚摸时</li>
+                    <li><code>6.png</code> —— 跑酷中的敌人</li>
+                    <li><code>7.png</code> —— 跑酷主角</li>
+                    <li><code>8.png</code> —— 脏了（清洁度低）</li>
+                    <li><code>1.mp3</code> —— 背景音乐</li>
+                    <li><code>1.woff2</code> —— 自定义字体</li>
+                </ul><p>可以只上传部分文件，缺失的会用原始资源替代。多个模组可同时装备，同名文件以「后装备的」为准。</p></div>
+                <div class="tutorial-section"><h3>✏️ 四、编辑布局</h3><p>点击右上角圆形按钮组中的「✏️」进入编辑模式，可以拖动底部的游戏按钮到屏幕任意位置。拖动完成后点「✅ 完成」保存。点「↩️ 重置」可以恢复默认位置。</p></div>
+            `,
+            en: `
+                <div class="tutorial-section"><h3>🐋 1. How to Raise Your Whale</h3><ul>
+                    <li><b>Fatigue (Token)</b>: The core stat. Decreases over time. At 0, whale enters 60s "server busy" cooldown.</li>
+                    <li><b>🍎 Food</b>: Buy or claim free food, then feed to restore fatigue.</li>
+                    <li><b>🤚 Pet</b>: Drag the 🤚 icon over the whale for 10s to gain Token and coins.</li>
+                    <li><b>🏋 Train</b>: Costs 15 Token, whale sweats briefly.</li>
+                    <li><b>🧽 Bath</b>: Only available when cleanliness < 30. Drag 🧽 for 10s to clean.</li>
+                    <li><b>🏃 Run</b>: Mini-game to earn diamonds. Revive costs 10 diamonds.</li>
+                </ul></div>
+                <div class="tutorial-section"><h3>🪙 2. Currency & Hats</h3><ul>
+                    <li><b>Coins 🪙</b>: From petting, free daily apples, etc. Used to buy hats and food.</li>
+                    <li><b>Diamonds 💎</b>: Collected in the run mini-game. Used to revive or buy honey/cake.</li>
+                    <li><b>Hats</b>: Different hats give different bonuses (Crown saves Token, Top Hat boosts petting, Cap boosts feeding, etc.).</li>
+                </ul></div>
+                <div class="tutorial-section"><h3>📦 3. Mod File Mapping</h3><p>When making a mod, these filenames map to game assets:</p><ul>
+                    <li><code>1.gif</code> — Normal state (default)</li>
+                    <li><code>1.png</code> — Exercising</li>
+                    <li><code>2.png</code> — Sleeping / Server busy</li>
+                    <li><code>3.png</code> — Sweating (low Token)</li>
+                    <li><code>4.png</code> — Crying (extremely hungry)</li>
+                    <li><code>5.png</code> — Being petted</li>
+                    <li><code>6.png</code> — Runner enemy</li>
+                    <li><code>7.png</code> — Runner player</li>
+                    <li><code>8.png</code> — Dirty (low cleanliness)</li>
+                    <li><code>1.mp3</code> — Background music</li>
+                    <li><code>1.woff2</code> — Custom font</li>
+                </ul><p>Partial uploads are OK; missing files use originals. Multiple mods can be equipped; later-equipped mods override same-name files.</p></div>
+                <div class="tutorial-section"><h3>✏️ 4. Edit Layout</h3><p>Tap "✏️" in the top-right round button group to enter edit mode, then drag game buttons anywhere. Tap "✅ Done" to save. Tap "↩️ Reset" to restore default positions.</p></div>
+            `
+        };
+
+        var currentLang = 'zh';
+        function t(key) {
+            var dict = I18N[currentLang] || I18N.zh;
+            if (dict[key] !== undefined) return dict[key];
+            return I18N.zh[key] !== undefined ? I18N.zh[key] : key;
+        }
+        function applyLanguage() {
+            var els = document.querySelectorAll('[data-i18n]');
+            for (var i = 0; i < els.length; i++) {
+                var key = els[i].getAttribute('data-i18n');
+                if (els[i].tagName !== 'INPUT' && els[i].tagName !== 'TEXTAREA') els[i].innerHTML = t(key);
+            }
+            var editBtn = document.getElementById('btn-edit-layout');
+            if (editBtn) editBtn.title = t('btn-edit-layout');
+            refreshStatusText(); updateModStatus(); renderModList();
+            renderFeedList(); renderModMakerList(); updateCoinDisplay();
+            renderTutorial(); updateAboutText();
+        }
+        function setLanguage(lang) {
+            if (lang !== 'zh' && lang !== 'en') return;
+            currentLang = lang;
+            try { localStorage.setItem('whaleGameLang_index', lang); } catch (e) {}
+            applyLanguage(); saveGame(true, true);
+        }
+        function loadLanguage() {
+            try {
+                var saved = localStorage.getItem('whaleGameLang_index');
+                if (saved === 'en' || saved === 'zh') currentLang = saved;
+            } catch (e) {}
+            var sel = document.getElementById('lang-select');
+            if (sel) sel.value = currentLang;
+        }
+        function renderTutorial() {
+            var el = document.getElementById('tutorial-content');
+            if (el) el.innerHTML = TUTORIAL_HTML[currentLang] || TUTORIAL_HTML.zh;
+        }
+        function updateAboutText() {
+            var versionEl = document.getElementById('about-version-text');
+            if (versionEl) versionEl.textContent = (currentLang === 'en' ? 'Version: ' : '版本：') + CURRENT_VERSION;
+        }
+        function refreshStatusText() {
+            if (isSleeping) statusText.innerHTML = t('status-server-busy');
+            else if (cleanliness <= 30) statusText.innerHTML = t('status-dirty');
+            else if (token <= 20) statusText.innerHTML = t('status-hungry');
+            else if (token <= 50) statusText.innerHTML = t('status-tired');
+            else statusText.innerHTML = t('status-happy');
+        }
+        function updateCoinDisplay() {
+            coinText.innerHTML = "🪙：" + coins;
+            diamondText.innerHTML = "💎：" + diamonds;
+        }
+
+        var token = 100, coins = 50, diamonds = 0;
+        var whaleName = 'DeepSeek', whaleNameColor = '#ffffff';
+        var currentHat = '', hatType = '';
+        var ownedHats = {}, foodInventory = {};
+        var isSleeping = false, isSad = false, isPetting = false, isBathing = false;
+        var petTimer, sleepTimer, intervalTimer, bathTimer, cleanlinessTimer;
+        var actionLocked = false, actionLockTimer = null;
+        var autoSaveEnabled = true, autoSaveInterval = null;
+        const AUTO_SAVE_DELAY = 1000;
+        var freeAppleCount = 3, lastFreeDate = '', cleanliness = 100;
+        var CURRENT_VERSION = '1.0';
+        const ASSET_BASE_URL = 'https://jj57525885jj57525885.github.io/15555/';
+        const SAVE_KEY = 'whaleGameSave_index';
+        const SAVE_KEY_LEGACY = 'whaleGameSave';
+        const MOD_STORAGE_KEY = 'whaleGameMods_index';
+        const BTN_LAYOUT_KEY = 'whaleGameBtnLayout_index';
+        var _lastSavedJson = '';
+        var modList = [], modBlobUrls = {}, modFontStyleTag = null, modMakerFiles = {};
+        var MOD_MAKER_REQUIRED = [
+            { file: '1.gif',  desc: '正常 / Normal' },{ file: '1.png',  desc: '锻炼 / Exercising' },
+            { file: '2.png',  desc: '睡觉 / Sleeping' },{ file: '3.png',  desc: '流汗 / Sweating' },
+            { file: '4.png',  desc: '流泪 / Crying' },{ file: '5.png',  desc: '抚摸 / Petting' },
+            { file: '6.png',  desc: '跑酷敌人 / Runner enemy' },{ file: '7.png',  desc: '跑酷主角 / Runner player' },
+            { file: '8.png',  desc: '脏了 / Dirty' },{ file: '1.mp3',  desc: '背景音乐 / BGM' },
+            { file: '1.woff2',desc: '字体 / Font' }
+        ];
 
         var whaleImg = document.getElementById('whale-img');
         var tokenBar = document.getElementById('token-bar');
@@ -323,305 +484,650 @@
         var runPlayer, runVelocity, runGravity, runIsJumping;
         var spikeSpeed, obstacleTimer, enemyTimer;
         var currentDifficulty, runScore, isRunActive;
-        var animationFrameId;
-        var lastDifficulty = 'easy';
-        var isInvincible = false;
-        var revivePending = false;
+        var animationFrameId, lastDifficulty = 'easy', isInvincible = false, revivePending = false;
         var gameButtons = document.querySelectorAll('.game-btn');
         var bgm = document.getElementById('bgm');
         var modManagerModal = document.getElementById('mod-manager-modal');
         var modStatus = document.getElementById('mod-status');
         var fullscreenToggleBtn = document.getElementById('fullscreen-toggle-btn');
+        var aboutModal = document.getElementById('about-modal');
+        var modMakerModal = document.getElementById('mod-maker-modal');
+        var tutorialModal = document.getElementById('tutorial-modal');
 
-        // ============ 全屏切换 ============
         function enterFullscreen() {
-            const elem = document.documentElement;
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen().catch(err => {});
-            } else if (elem.webkitRequestFullscreen) {
-                elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) {
-                elem.msRequestFullscreen();
-            }
+            var elem = document.documentElement; var p;
+            try {
+                if (elem.requestFullscreen) p = elem.requestFullscreen();
+                else if (elem.webkitRequestFullscreen) p = elem.webkitRequestFullscreen();
+                else if (elem.msRequestFullscreen) p = elem.msRequestFullscreen();
+                if (p && p.catch) p.catch(function(){});
+            } catch (e) {}
         }
         function exitFullscreen() {
-            if (document.exitFullscreen) {
-                document.exitFullscreen().catch(err => {});
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
+            try {
+                if (document.exitFullscreen) document.exitFullscreen().catch(function(){});
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                else if (document.msExitFullscreen) document.msExitFullscreen();
+            } catch (e) {}
         }
         function toggleFullscreen() {
-            if (document.fullscreenElement || document.webkitFullscreenElement) {
-                exitFullscreen();
-            } else {
-                enterFullscreen();
-            }
+            if (document.fullscreenElement || document.webkitFullscreenElement) exitFullscreen();
+            else enterFullscreen();
         }
         function updateFullscreenBtn() {
             if (!fullscreenToggleBtn) return;
-            if (document.fullscreenElement || document.webkitFullscreenElement) {
-                fullscreenToggleBtn.innerHTML = '⤢ 缩回';
-            } else {
-                fullscreenToggleBtn.innerHTML = '⛶ 全屏';
-            }
+            fullscreenToggleBtn.innerHTML = (document.fullscreenElement || document.webkitFullscreenElement) ?
+                (currentLang === 'en' ? '🡼 Exit' : '🡼 缩回') :
+                (currentLang === 'en' ? '⛶ Fullscreen' : '⛶ 全屏');
         }
+        window.addEventListener('load', function() { setTimeout(function() { if (!document.fullscreenElement && !document.webkitFullscreenElement) enterFullscreen(); }, 100); });
+        function firstInteractFs() {
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                document.removeEventListener('click', firstInteractFs);
+                document.removeEventListener('touchstart', firstInteractFs);
+                return;
+            }
+            enterFullscreen();
+            document.removeEventListener('click', firstInteractFs);
+            document.removeEventListener('touchstart', firstInteractFs);
+        }
+        document.addEventListener('click', firstInteractFs);
+        document.addEventListener('touchstart', firstInteractFs);
         document.addEventListener('fullscreenchange', updateFullscreenBtn);
         document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
-        window.addEventListener('load', function() {
-            setTimeout(() => enterFullscreen(), 500);
-        });
-        document.addEventListener('click', function() {
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                enterFullscreen();
+
+        function openAbout() { aboutModal.classList.add('show'); settingsModal.classList.remove('show'); checkForUpdate(); }
+        function closeAbout() { aboutModal.classList.remove('show'); settingsModal.classList.add('show'); }
+        function checkForUpdate() {
+            var latestVersion = '2.0';
+            var currentVersionEl = document.getElementById('about-version-text');
+            var downloadBtn = document.getElementById('about-download-btn');
+            var updateHint = document.getElementById('about-update-hint');
+            currentVersionEl.textContent = (currentLang === 'en' ? 'Version: ' : '版本：') + CURRENT_VERSION;
+            if (latestVersion !== CURRENT_VERSION) {
+                downloadBtn.textContent = (currentLang === 'en' ? '🔄 Update to ' : '🔄 更新到 ') + latestVersion;
+                updateHint.style.display = 'block';
+                updateHint.textContent = (currentLang === 'en' ? 'Current ' : '当前版本 ') + CURRENT_VERSION + (currentLang === 'en' ? ', latest ' : '，最新版本 ') + latestVersion + (currentLang === 'en' ? ' available!' : ' 可用！');
+            } else { downloadBtn.textContent = t('btn-download'); updateHint.style.display = 'none'; }
+        }
+        function downloadApp() {
+            var apkUrl = ASSET_BASE_URL + 'v2.0.apk';
+            alert((currentLang === 'en' ? 'Downloading ' : '正在下载 ') + apkUrl + ' ...');
+            var link = document.createElement('a');
+            link.href = apkUrl; link.download = apkUrl;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+        function goToAbout() { saveGame(true, true); window.location.href = 'https://jj57525885jj57525885.github.io/15555/2.html'; }
+        function goToConvert() { saveGame(true, true); window.location.href = '2.html'; }
+        window.addEventListener('beforeunload', function() { try { saveGame(true, true); } catch (e) {} });
+        document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden') { try { saveGame(true, true); } catch (e) {} } });
+
+        function openTutorial() { renderTutorial(); tutorialModal.classList.add('show'); settingsModal.classList.remove('show'); }
+        function closeTutorial() { tutorialModal.classList.remove('show'); settingsModal.classList.add('show'); }
+        tutorialModal.addEventListener('click', function(e) { if (e.target === tutorialModal) closeTutorial(); });
+
+        // ============ 编辑布局（修复版 v3） ============
+        var editMode = false;
+        var editModeDragged = {};
+        var _dragTarget = null;
+        var _dragStartX = 0, _dragStartY = 0, _dragOrigX = 0, _dragOrigY = 0;
+        var _dragMoved = false;
+
+        function getButtonLayout() {
+            try {
+                var raw = localStorage.getItem(BTN_LAYOUT_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) { return {}; }
+        }
+        function saveButtonLayout(layout) {
+            try { localStorage.setItem(BTN_LAYOUT_KEY, JSON.stringify(layout)); } catch (e) {}
+        }
+
+        // 应用布局：有位置的按钮脱离 #controls 用 fixed 定位
+        function applyButtonLayout() {
+            var layout = getButtonLayout();
+            var controls = document.getElementById('controls');
+            var btns = document.querySelectorAll('.game-btn');
+            for (var i = 0; i < btns.length; i++) {
+                var btn = btns[i];
+                if (layout[btn.id]) {
+                    if (btn.parentElement !== document.body) document.body.appendChild(btn);
+                    btn.classList.add('btn-detached');
+                    btn.style.left = layout[btn.id].x + 'px';
+                    btn.style.top = layout[btn.id].y + 'px';
+                } else {
+                    if (btn.parentElement !== controls) controls.appendChild(btn);
+                    btn.classList.remove('btn-detached');
+                    btn.style.left = '';
+                    btn.style.top = '';
+                }
             }
-        });
+        }
+
+        // 关键修复：先记录所有按钮位置，再统一处理，避免 flex 重排导致位置错乱
+        function toggleEditMode() {
+            editMode = !editMode;
+            document.body.classList.toggle('edit-mode', editMode);
+            document.getElementById('edit-overlay').classList.toggle('show', editMode);
+            var editBtn = document.getElementById('btn-edit-layout');
+            if (editBtn) editBtn.classList.toggle('active', editMode);
+            var btns = document.querySelectorAll('.game-btn');
+
+            if (editMode) {
+                if (settingsModal.classList.contains('show')) closeSettings();
+                editModeDragged = {};
+                // 1. 先一次性记录所有按钮的当前视觉位置
+                var rects = {};
+                for (var i = 0; i < btns.length; i++) {
+                    rects[btns[i].id] = btns[i].getBoundingClientRect();
+                    btns[i].dataset.wasDetached = btns[i].classList.contains('btn-detached') ? '1' : '0';
+                    btns[i].dataset.origIndex = i;
+                }
+                // 2. 再统一移到 body 下，应用 fixed 定位
+                for (var i = 0; i < btns.length; i++) {
+                    var btn = btns[i];
+                    var rect = rects[btn.id];
+                    if (btn.parentElement !== document.body) document.body.appendChild(btn);
+                    btn.classList.add('btn-detached');
+                    btn.style.left = rect.left + 'px';
+                    btn.style.top = rect.top + 'px';
+                }
+                if (!localStorage.getItem('whaleGameEditHintShown')) {
+                    setTimeout(function() {
+                        alert(currentLang === 'en' ?
+                            'Drag game buttons anywhere. Tap ✅ Done when finished.' :
+                            '拖动游戏按钮到任意位置，完成后点「✅ 完成」。');
+                        try { localStorage.setItem('whaleGameEditHintShown', '1'); } catch (e) {}
+                    }, 300);
+                }
+            } else {
+                var layout = getButtonLayout();
+                var controls = document.getElementById('controls');
+                // 分类：保留 detached 的 vs 回到 #controls 的
+                var toReturn = [];
+                for (var i = 0; i < btns.length; i++) {
+                    var btn = btns[i];
+                    var wasDragged = !!editModeDragged[btn.id];
+                    var wasDetachedBefore = btn.dataset.wasDetached === '1';
+                    if (wasDragged || wasDetachedBefore) {
+                        layout[btn.id] = { x: parseFloat(btn.style.left) || 0, y: parseFloat(btn.style.top) || 0 };
+                    } else {
+                        toReturn.push(btn);
+                        delete layout[btn.id];
+                    }
+                    delete btn.dataset.wasDetached;
+                }
+                // 按原始顺序插回 #controls
+                toReturn.sort(function(a, b) {
+                    return (parseInt(a.dataset.origIndex) || 0) - (parseInt(b.dataset.origIndex) || 0);
+                });
+                for (var i = 0; i < toReturn.length; i++) {
+                    var btn = toReturn[i];
+                    controls.appendChild(btn);
+                    btn.classList.remove('btn-detached');
+                    btn.style.left = '';
+                    btn.style.top = '';
+                    delete btn.dataset.origIndex;
+                }
+                saveButtonLayout(layout);
+                editModeDragged = {};
+            }
+        }
+
+        function resetButtonLayout() {
+            try { localStorage.removeItem(BTN_LAYOUT_KEY); } catch (e) {}
+            var controls = document.getElementById('controls');
+            var btns = document.querySelectorAll('.game-btn');
+            for (var i = 0; i < btns.length; i++) {
+                var btn = btns[i];
+                if (btn.parentElement !== controls) controls.appendChild(btn);
+                btn.classList.remove('btn-detached');
+                btn.style.left = '';
+                btn.style.top = '';
+            }
+            editModeDragged = {};
+        }
+
+        function onDragStart(e) {
+            if (!editMode) return;
+            var target = e.target;
+            while (target && target !== document.body) {
+                if (target.classList && target.classList.contains('game-btn')) break;
+                target = target.parentElement;
+            }
+            if (!target || !target.classList.contains('game-btn')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            _dragTarget = target;
+            _dragMoved = false;
+            var point = e.touches ? e.touches[0] : e;
+            _dragStartX = point.clientX;
+            _dragStartY = point.clientY;
+            var rect = target.getBoundingClientRect();
+            _dragOrigX = rect.left;
+            _dragOrigY = rect.top;
+            if (target.parentElement !== document.body) document.body.appendChild(target);
+            target.classList.add('btn-detached', 'dragging');
+            target.style.left = _dragOrigX + 'px';
+            target.style.top = _dragOrigY + 'px';
+        }
+        function onDragMove(e) {
+            if (!_dragTarget) return;
+            e.preventDefault();
+            var point = e.touches ? e.touches[0] : e;
+            var dx = point.clientX - _dragStartX;
+            var dy = point.clientY - _dragStartY;
+            // 超过阈值视为拖拽
+            if (!_dragMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) _dragMoved = true;
+            var nx = _dragOrigX + dx;
+            var ny = _dragOrigY + dy;
+            var w = window.innerWidth, h = window.innerHeight;
+            var bw = _dragTarget.offsetWidth, bh = _dragTarget.offsetHeight;
+            if (nx < 0) nx = 0;
+            if (ny < 0) ny = 0;
+            if (nx + bw > w) nx = w - bw;
+            if (ny + bh > h) ny = h - bh;
+            _dragTarget.style.left = nx + 'px';
+            _dragTarget.style.top = ny + 'px';
+            if (_dragMoved) editModeDragged[_dragTarget.id] = true;
+        }
+        function onDragEnd(e) {
+            if (!_dragTarget) return;
+            _dragTarget.classList.remove('dragging');
+            _dragTarget = null;
+        }
+
+        // 关键修复：编辑模式下拦截按钮的 click，防止触发 onclick 功能
+        function interceptClickInEditMode(e) {
+            if (!editMode) return;
+            var target = e.target;
+            while (target && target !== document.body) {
+                if (target.classList && target.classList.contains('game-btn')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+                    return false;
+                }
+                target = target.parentElement;
+            }
+        }
+
+        document.addEventListener('mousedown', onDragStart, true);
+        document.addEventListener('touchstart', onDragStart, {passive: false, capture: true});
+        document.addEventListener('mousemove', onDragMove, {passive: false});
+        document.addEventListener('touchmove', onDragMove, {passive: false});
+        document.addEventListener('mouseup', onDragEnd);
+        document.addEventListener('touchend', onDragEnd);
+        // 捕获阶段拦截 click，阻止 onclick
+        document.addEventListener('click', interceptClickInEditMode, true);
 
         // ============ 初始化 ============
+        loadLanguage();
         loadGame();
         initSettings();
+        initNameColorInput();
         checkFreeAppleReset();
         updateUI();
         updateWhaleNameDisplay();
+        applyNameColor();
+        applyButtonLayout();
         startAutoConsume();
         startCleanlinessDecline();
         renderFeedList();
         initNameEditor();
-        loadModsFromDB();
+        loadMods();
+        startAutoSaveLoop();
+        applyLanguage();
+        updateFullscreenBtn();
 
-        // ============ 资源 URL 获取函数 ============
+        function startAutoSaveLoop() {
+            if (autoSaveInterval) { clearInterval(autoSaveInterval); autoSaveInterval = null; }
+            autoSaveInterval = setInterval(function() { if (autoSaveEnabled) saveGame(true); }, AUTO_SAVE_DELAY);
+        }
         function getAssetUrl(filename) {
             if (modBlobUrls[filename]) return modBlobUrls[filename];
             return filename;
         }
 
-        // ============ 模组管理（列表版，持久化） ============
-        const MOD_DB_NAME = 'whale-mod-db-v2';
-        const MOD_STORE_NAME = 'mod-list';
-
-        function openModDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(MOD_DB_NAME, 1);
-                request.onupgradeneeded = (e) => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains(MOD_STORE_NAME)) {
-                        db.createObjectStore(MOD_STORE_NAME, { keyPath: 'id' });
+        function normalizeHexColor(val) {
+            if (!val) return null;
+            val = String(val).trim();
+            if (val.charAt(0) !== '#') val = '#' + val;
+            if (/^#[0-9a-fA-F]{3}$/.test(val)) return ('#' + val[1] + val[1] + val[2] + val[2] + val[3] + val[3]).toLowerCase();
+            if (/^#[0-9a-fA-F]{6}$/.test(val)) return val.toLowerCase();
+            return null;
+        }
+        function applyNameColor() {
+            if (whaleNameText) whaleNameText.style.color = whaleNameColor;
+            if (whaleNameInput) whaleNameInput.style.color = whaleNameColor;
+        }
+        function initNameColorInput() {
+            var input = document.getElementById('name-color-input');
+            var preview = document.getElementById('name-color-preview');
+            if (!input || !preview) return;
+            input.value = whaleNameColor;
+            preview.style.background = whaleNameColor;
+            input.addEventListener('input', function() {
+                var normalized = normalizeHexColor(this.value);
+                if (normalized) {
+                    this.classList.remove('invalid');
+                    whaleNameColor = normalized;
+                    preview.style.background = normalized;
+                    applyNameColor();
+                } else this.classList.add('invalid');
+            });
+            input.addEventListener('blur', function() {
+                if (this.value.trim() === '' || !normalizeHexColor(this.value)) {
+                    this.value = whaleNameColor;
+                    this.classList.remove('invalid');
+                } else this.value = normalizeHexColor(this.value);
+            });
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    var normalized = normalizeHexColor(this.value);
+                    if (normalized) {
+                        whaleNameColor = normalized;
+                        preview.style.background = normalized;
+                        applyNameColor();
+                        this.value = normalized;
+                        this.classList.remove('invalid');
+                        saveGame(true, true);
                     }
-                };
-                request.onsuccess = (e) => resolve(e.target.result);
-                request.onerror = (e) => reject(e.target.error);
-            });
-        }
-
-        async function saveModListToDB() {
-            const db = await openModDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(MOD_STORE_NAME, 'readwrite');
-                const store = tx.objectStore(MOD_STORE_NAME);
-                store.clear();
-                for (const mod of modList) {
-                    store.put(mod);
+                    this.blur();
                 }
-                tx.oncomplete = () => resolve();
-                tx.onerror = (e) => reject(e.target.error);
             });
+            input.addEventListener('touchstart', function(e) { e.stopPropagation(); });
         }
 
-        async function loadModListFromDB() {
-            const db = await openModDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(MOD_STORE_NAME, 'readonly');
-                const store = tx.objectStore(MOD_STORE_NAME);
-                const req = store.getAll();
-                req.onsuccess = () => resolve(req.result || []);
-                req.onerror = (e) => reject(e.target.error);
+        function blobToDataURL(blob) {
+            return new Promise(function(resolve, reject) {
+                var reader = new FileReader();
+                reader.onload = function() { resolve(reader.result); };
+                reader.onerror = function() { reject(reader.error || new Error('FileReader failed')); };
+                reader.readAsDataURL(blob);
             });
         }
+        function dataURLToBlob(dataUrl) {
+            try {
+                var parts = dataUrl.split(',');
+                var meta = parts[0], body = parts[1];
+                var mimeMatch = meta.match(/data:(.*?)(;base64)?$/);
+                var mime = mimeMatch && mimeMatch[1] ? mimeMatch[1] : 'application/octet-stream';
+                var isBase64 = meta.indexOf(';base64') !== -1;
+                var binary = isBase64 ? atob(body) : decodeURIComponent(body);
+                var bytes = new Uint8Array(binary.length);
+                for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                return new Blob([bytes], { type: mime });
+            } catch (e) { console.warn('dataURL to Blob failed', e); return null; }
+        }
 
+        async function saveModListToStorage() {
+            var serialized = [];
+            for (var i = 0; i < modList.length; i++) {
+                var mod = modList[i];
+                var assets = {};
+                for (var filename in mod.assets) {
+                    var val = mod.assets[filename];
+                    if (!val) continue;
+                    if (typeof val === 'string' && val.indexOf('data:') === 0) assets[filename] = val;
+                    else if (val instanceof Blob) {
+                        try { assets[filename] = await blobToDataURL(val); }
+                        catch (e) { console.warn('Blob to base64 failed: ' + filename, e); }
+                    }
+                }
+                serialized.push({ id: mod.id, name: mod.name, equipped: !!mod.equipped, assets: assets });
+            }
+            var json = JSON.stringify(serialized);
+            var sizeMB = json.length / (1024 * 1024);
+            if (sizeMB > 4.5) throw new Error('Mods total ' + sizeMB.toFixed(1) + 'MB, exceeds storage limit.');
+            try {
+                localStorage.removeItem(MOD_STORAGE_KEY);
+                localStorage.setItem(MOD_STORAGE_KEY, json);
+            } catch (e) {
+                if (e && (e.name === 'QuotaExceededError' || e.code === 22)) throw new Error('Storage full, delete some mods and retry');
+                throw e;
+            }
+            for (var j = 0; j < modList.length; j++) modList[j].assets = serialized[j].assets;
+        }
+        function loadModListFromStorage() {
+            var json = localStorage.getItem(MOD_STORAGE_KEY);
+            if (!json) return [];
+            var serialized;
+            try { serialized = JSON.parse(json); } catch (e) { return []; }
+            if (!Array.isArray(serialized)) return [];
+            var mods = [];
+            for (var i = 0; i < serialized.length; i++) {
+                var item = serialized[i];
+                if (!item || !item.id) continue;
+                var assets = {};
+                var rawAssets = item.assets || {};
+                for (var filename in rawAssets) {
+                    var val = rawAssets[filename];
+                    if (typeof val === 'string' && val.indexOf('data:') === 0) {
+                        var blob = dataURLToBlob(val);
+                        if (blob) assets[filename] = blob;
+                    } else if (val instanceof Blob) assets[filename] = val;
+                }
+                mods.push({ id: item.id, name: item.name || 'Mod', equipped: !!item.equipped, assets: assets });
+            }
+            return mods;
+        }
+        function collectEquippedAssets() {
+            var merged = {};
+            for (var i = 0; i < modList.length; i++) {
+                var mod = modList[i];
+                if (!mod.equipped) continue;
+                var assets = mod.assets || {};
+                for (var filename in assets) merged[filename] = assets[filename];
+            }
+            return merged;
+        }
         function applyModAssets(assets) {
-            for (let key in modBlobUrls) URL.revokeObjectURL(modBlobUrls[key]);
+            for (var key in modBlobUrls) { try { URL.revokeObjectURL(modBlobUrls[key]); } catch (e) {} }
             modBlobUrls = {};
             if (assets) {
-                for (let filename in assets) modBlobUrls[filename] = URL.createObjectURL(assets[filename]);
+                for (var filename in assets) {
+                    var val = assets[filename];
+                    if (!val) continue;
+                    var blob = val;
+                    if (typeof val === 'string' && val.indexOf('data:') === 0) blob = dataURLToBlob(val);
+                    if (blob instanceof Blob) {
+                        try { modBlobUrls[filename] = URL.createObjectURL(blob); }
+                        catch (e) { console.warn('createObjectURL failed', filename, e); }
+                    }
+                }
             }
             if (modFontStyleTag) { modFontStyleTag.remove(); modFontStyleTag = null; }
             if (modBlobUrls['1.woff2']) {
-                const style = document.createElement('style');
-                style.textContent = `@font-face { font-family: 'WhaleCustomFont'; src: url('${modBlobUrls['1.woff2']}') format('woff2'); font-weight: normal; font-style: normal; font-display: swap; }`;
+                var style = document.createElement('style');
+                style.textContent = "@font-face { font-family: 'WhaleCustomFont'; src: url('" + modBlobUrls['1.woff2'] + "') format('woff2'); font-weight: normal; font-style: normal; font-display: swap; }";
                 document.head.appendChild(style);
                 modFontStyleTag = style;
             }
             applyAllAssetUrls();
+            checkState();
         }
-
+        function applyAllEquippedMods() { applyModAssets(collectEquippedAssets()); }
         function applyAllAssetUrls() {
-            whaleImg.src = getAssetUrl('1.gif');
-            const source = bgm.querySelector('source');
+            var source = bgm.querySelector('source');
             source.src = getAssetUrl('1.mp3');
             bgm.load();
             if (runPlayer) runPlayer.src = getAssetUrl('7.png');
         }
-
-        async function equipModById(id) {
-            if (currentModId !== null) {
-                const oldMod = modList.find(m => m.id === currentModId);
-                if (oldMod) oldMod.equipped = false;
-                currentModId = null;
-                applyModAssets(null);
-            }
-            if (id !== null) {
-                const mod = modList.find(m => m.id === id);
-                if (!mod) return;
-                mod.equipped = true;
-                currentModId = id;
-                applyModAssets(mod.assets);
-            }
-            await saveModListToDB();
-            renderModList();
-            updateModStatus();
+        async function toggleEquipMod(id) {
+            var mod = modList.find(function(m) { return m.id === id; });
+            if (!mod) return;
+            mod.equipped = !mod.equipped;
+            applyAllEquippedMods(); renderModList(); updateModStatus();
+            try { await saveModListToStorage(); } catch (e) { console.warn('Save equip state failed', e); }
         }
-
         async function deleteModById(id) {
-            const index = modList.findIndex(m => m.id === id);
+            var index = modList.findIndex(function(m) { return m.id === id; });
             if (index === -1) return;
-            if (currentModId === id) {
-                await equipModById(null);
-            }
             modList.splice(index, 1);
-            await saveModListToDB();
-            renderModList();
-            updateModStatus();
+            applyAllEquippedMods(); renderModList(); updateModStatus();
+            try { await saveModListToStorage(); } catch (e) { console.warn('Delete save failed', e); }
         }
-
+        function getConflictFiles(modId) {
+            var target = modList.find(function(m) { return m.id === modId; });
+            if (!target) return [];
+            var conflictSet = {};
+            for (var i = 0; i < modList.length; i++) {
+                var other = modList[i];
+                if (other.id === modId) continue;
+                if (!other.equipped) continue;
+                for (var filename in other.assets) if (target.assets[filename]) conflictSet[filename] = true;
+            }
+            return Object.keys(conflictSet);
+        }
         function renderModList() {
-            const listElement = document.getElementById('mod-list');
+            var listElement = document.getElementById('mod-list');
             if (!listElement) return;
             if (modList.length === 0) {
-                listElement.innerHTML = '<div style="color:#aaa;text-align:center;padding:20px;">暂无模组，请上传ZIP文件</div>';
+                listElement.innerHTML = '<div style="color:#aaa;text-align:center;padding:20px;">' + t('mod-list-empty') + '</div>';
                 return;
             }
-            let html = '';
-            for (const mod of modList) {
-                const isEquipped = (mod.id === currentModId);
-                html += `<div class="mod-item">
-                    <div class="mod-info">${mod.name || '未命名模组'}</div>
-                    <div class="mod-buttons">
-                        <button onclick="equipModById('${mod.id}')" style="background:${isEquipped ? '#e67e22' : '#2ecc71'};">${isEquipped ? '卸下' : '装备'}</button>
-                        <button onclick="deleteModById('${mod.id}')" style="background:#e74c3c;">删除</button>
-                    </div>
-                </div>`;
+            var html = '';
+            for (var i = 0; i < modList.length; i++) {
+                var mod = modList[i];
+                var isEquipped = !!mod.equipped;
+                var conflictCount = isEquipped ? 0 : getConflictFiles(mod.id).length;
+                var conflictTag = conflictCount > 0 ? '<span class="mod-conflict">' + t('mod-tag-conflict') + conflictCount + t('mod-tag-conflict-unit') + '</span>' : '';
+                html += '<div class="mod-item' + (isEquipped ? ' equipped' : '') + '">' +
+                    '<div class="mod-info"><span class="mod-name">' + (mod.name || 'Mod') + '</span>' +
+                    (isEquipped ? '<span class="mod-tag">' + t('mod-tag-equipped') + '</span>' : '') + conflictTag + '</div>' +
+                    '<div class="mod-buttons">' +
+                        '<button onclick="toggleEquipMod(\'' + mod.id + '\')" style="background:' + (isEquipped ? '#e67e22' : '#2ecc71') + ';">' + (isEquipped ? t('mod-btn-unequip') : t('mod-btn-equip')) + '</button>' +
+                        '<button onclick="deleteModById(\'' + mod.id + '\')" style="background:#e74c3c;">' + t('mod-btn-delete') + '</button>' +
+                    '</div></div>';
             }
             listElement.innerHTML = html;
         }
-
         function updateModStatus() {
             if (!modStatus) return;
-            if (currentModId !== null) {
-                const mod = modList.find(m => m.id === currentModId);
-                modStatus.textContent = `当前装备：${mod ? mod.name : '自定义模组'}`;
-            } else {
-                modStatus.textContent = '当前未装备任何模组';
-            }
+            var equippedMods = modList.filter(function(m) { return m.equipped; });
+            if (equippedMods.length === 0) modStatus.textContent = t('mod-status-none');
+            else modStatus.textContent = t('mod-status-equipped') + equippedMods.length + t('mod-status-equipped-unit') + equippedMods.map(function(m) { return m.name || 'Mod'; }).join(', ');
         }
-
         function handleModUpload(event) {
-            const file = event.target.files[0];
+            var file = event.target.files[0];
             if (!file) return;
-            const zip = new JSZip();
-            zip.loadAsync(file).then(async (zipContent) => {
-                const requiredFiles = ['1.gif', '1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '1.mp3', '1.woff2'];
-                const assets = {};
-                for (let filename of requiredFiles) {
-                    const fileEntry = zipContent.file(filename);
-                    if (fileEntry) {
-                        const blob = await fileEntry.async('blob');
-                        assets[filename] = blob;
-                    }
+            var zip = new JSZip();
+            zip.loadAsync(file).then(async function(zipContent) {
+                var requiredFiles = ['1.gif','1.png','2.png','3.png','4.png','5.png','6.png','7.png','8.png','1.mp3','1.woff2'];
+                var assets = {};
+                for (var i = 0; i < requiredFiles.length; i++) {
+                    var filename = requiredFiles[i];
+                    var fileEntry = zipContent.file(filename);
+                    if (fileEntry) assets[filename] = await fileEntry.async('blob');
                 }
-                if (Object.keys(assets).length === 0) {
-                    alert('ZIP 中未找到任何可用的资源文件！');
-                    return;
-                }
-                const newMod = {
-                    id: 'mod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                    name: file.name.replace(/\.zip$/i, '') || '自定义模组',
-                    assets: assets,
-                    equipped: false
-                };
+                if (Object.keys(assets).length === 0) { alert('No usable files found in ZIP'); return; }
+                var newMod = { id: 'mod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9), name: file.name.replace(/\.zip$/i, '') || 'Mod', assets: assets, equipped: false };
                 modList.push(newMod);
-                await saveModListToDB();
-                renderModList();
-                updateModStatus();
-                alert('模组上传成功！已添加到列表');
-            }).catch(err => {
-                alert('ZIP 解析失败：' + err.message);
-            });
+                try {
+                    await saveModListToStorage();
+                    renderModList(); updateModStatus();
+                    alert('Mod uploaded successfully');
+                } catch (err) { modList.pop(); alert('Mod save failed: ' + (err && err.message ? err.message : err)); }
+            }).catch(function(err) { alert('ZIP parse failed: ' + err.message); });
             event.target.value = '';
         }
-
-        async function loadModsFromDB() {
-            try {
-                modList = await loadModListFromDB();
-                const equippedMod = modList.find(m => m.equipped);
-                if (equippedMod) {
-                    currentModId = equippedMod.id;
-                    applyModAssets(equippedMod.assets);
-                } else {
-                    currentModId = null;
-                    applyModAssets(null);
-                }
-                renderModList();
-                updateModStatus();
-            } catch (e) {
-                console.warn('加载模组列表失败', e);
-                renderModList();
-                updateModStatus();
+        function loadMods() {
+            var mods = [];
+            try { mods = loadModListFromStorage(); } catch (e) { console.warn('Load mods failed', e); }
+            modList = mods;
+            applyAllEquippedMods(); renderModList(); updateModStatus();
+        }
+        function openModManager() { modManagerModal.classList.add('show'); settingsModal.classList.remove('show'); modMakerModal.classList.remove('show'); renderModList(); updateModStatus(); }
+        function closeModManager() { modManagerModal.classList.remove('show'); settingsModal.classList.add('show'); }
+        function openModMaker() { modMakerModal.classList.add('show'); settingsModal.classList.remove('show'); modManagerModal.classList.remove('show'); renderModMakerList(); }
+        function closeModMaker() { modMakerModal.classList.remove('show'); settingsModal.classList.add('show'); }
+        function renderModMakerList() {
+            var listElement = document.getElementById('mod-maker-list');
+            if (!listElement) return;
+            var html = '';
+            for (var i = 0; i < MOD_MAKER_REQUIRED.length; i++) {
+                var item = MOD_MAKER_REQUIRED[i];
+                var uploaded = !!modMakerFiles[item.file];
+                html += '<div class="mod-maker-item"><div class="mod-maker-info"><div class="mod-maker-name">' + item.file +
+                    '<span class="mod-maker-desc">(' + item.desc + ')</span></div></div>' +
+                    '<div class="mod-maker-status">' + (uploaded ? '✅' : '⬜') + '</div>' +
+                    '<button onclick="uploadModMakerFile(\'' + item.file + '\')" style="background:' + (uploaded ? '#e67e22' : '#426EFE') + ';">' + (uploaded ? t('mod-maker-reselect') : t('mod-maker-upload-btn')) + '</button></div>';
+            }
+            var count = 0;
+            for (var k in modMakerFiles) if (modMakerFiles[k]) count++;
+            var hasAny = count > 0;
+            var missing = MOD_MAKER_REQUIRED.length - count;
+            var btnText2;
+            if (!hasAny) btnText2 = t('mod-maker-please-upload');
+            else if (missing > 0) btnText2 = t('mod-maker-create-with-missing') + missing + t('mod-maker-create-with-missing-unit');
+            else btnText2 = t('mod-maker-create');
+            html += '<button class="mod-maker-create-btn" onclick="createModFromMaker()" ' + (hasAny ? '' : 'disabled ') + 'style="background:' + (hasAny ? '#4CAF50' : '#666') + ';">' + btnText2 + '</button>';
+            listElement.innerHTML = html;
+            var hint = document.getElementById('mod-maker-hint');
+            if (hint) {
+                if (hasAny && missing > 0) hint.textContent = t('mod-maker-uploaded') + count + t('mod-maker-of') + MOD_MAKER_REQUIRED.length + t('mod-maker-files') + t('mod-maker-missing-suffix');
+                else if (hasAny) hint.textContent = t('mod-maker-uploaded') + count + t('mod-maker-of') + MOD_MAKER_REQUIRED.length + t('mod-maker-files') + t('mod-maker-ready');
+                else hint.textContent = t('mod-maker-hint');
             }
         }
-
-        function openModManager() {
-            modManagerModal.classList.add('show');
-            settingsModal.classList.remove('show');
-            renderModList();
-            updateModStatus();
+        function uploadModMakerFile(filename) {
+            var input = document.createElement('input');
+            input.type = 'file';
+            if (filename.endsWith('.gif')) input.accept = 'image/gif';
+            else if (filename.endsWith('.png')) input.accept = 'image/png';
+            else if (filename.endsWith('.mp3')) input.accept = 'audio/mpeg,audio/*';
+            else if (filename.endsWith('.woff2')) input.accept = '.woff2,font/woff2';
+            else input.accept = '*/*';
+            input.onchange = function(e) {
+                var file = e.target.files[0];
+                if (!file) return;
+                modMakerFiles[filename] = new Blob([file], { type: file.type || 'application/octet-stream' });
+                renderModMakerList();
+            };
+            input.click();
+        }
+        async function createModFromMaker() {
+            var count = 0;
+            for (var k in modMakerFiles) if (modMakerFiles[k]) count++;
+            if (count === 0) { alert(t('mod-maker-please-upload')); return; }
+            var nameInput = document.getElementById('mod-maker-name');
+            var modName = (nameInput.value || '').trim() || ('Custom_' + new Date().toLocaleString());
+            var assets = {}, missingFiles = [];
+            for (var i = 0; i < MOD_MAKER_REQUIRED.length; i++) {
+                var item = MOD_MAKER_REQUIRED[i];
+                if (modMakerFiles[item.file]) assets[item.file] = modMakerFiles[item.file];
+                else missingFiles.push(item.file);
+            }
+            var newMod = { id: 'mod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9), name: modName, assets: assets, equipped: false };
+            modList.push(newMod);
+            try {
+                await saveModListToStorage();
+                renderModList(); updateModStatus();
+                modMakerFiles = {}; nameInput.value = ''; renderModMakerList();
+                var msg = 'Mod "' + modName + '" created!';
+                if (missingFiles.length > 0) msg += '\nMissing ' + missingFiles.length + ' files (use originals): ' + missingFiles.join(', ');
+                alert(msg); closeModMaker();
+            } catch (e) { modList.pop(); alert('Mod save failed: ' + (e && e.message ? e.message : e)); }
         }
 
-        function closeModManager() {
-            modManagerModal.classList.remove('show');
-            settingsModal.classList.add('show');
-        }
-
-        // ============ 按钮冷却 ============
         function lockButtons(duration) {
             actionLocked = true;
             setAllGameButtonsDisabled(true);
             if (actionLockTimer) clearTimeout(actionLockTimer);
-            actionLockTimer = setTimeout(function() {
-                actionLocked = false;
-                setAllGameButtonsDisabled(false);
-                updateBathButtonState(); // 恢复后更新洗澡按钮状态
-            }, duration);
+            actionLockTimer = setTimeout(function() { actionLocked = false; setAllGameButtonsDisabled(false); updateBathButtonState(); }, duration);
         }
-
         function setAllGameButtonsDisabled(disabled) {
             for (var i = 0; i < gameButtons.length; i++) gameButtons[i].disabled = disabled;
-            if (!disabled) updateBathButtonState(); // 恢复时根据清洁度重新设置
+            if (!disabled) updateBathButtonState();
         }
-
         function isLocked() { return actionLocked; }
-
         function updateBathButtonState() {
             var bathBtn = document.getElementById('btn-bath');
-            if (bathBtn) {
-                bathBtn.disabled = (isLocked() || isSleeping || isPetting || isBathing || cleanliness >= 30);
-            }
+            if (bathBtn) bathBtn.disabled = (isLocked() || isSleeping || isPetting || isBathing || cleanliness >= 30);
         }
-
-        function openSettings() { settingsModal.classList.add('show'); modManagerModal.classList.remove('show'); }
+        function openSettings() { settingsModal.classList.add('show'); modManagerModal.classList.remove('show'); aboutModal.classList.remove('show'); modMakerModal.classList.remove('show'); tutorialModal.classList.remove('show'); }
         function closeSettings() { settingsModal.classList.remove('show'); }
-
         function initSettings() {
             volumeSlider.value = bgm.volume || 1;
             volumeValue.textContent = Math.round(volumeSlider.value * 100) + '%';
@@ -629,34 +1135,27 @@
                 bgm.volume = parseFloat(this.value);
                 volumeValue.textContent = Math.round(this.value * 100) + '%';
             };
-            updateMusicToggleUI();
-            updateAutoSaveToggleUI();
-            updateBathButtonState();
+            updateMusicToggleUI(); updateAutoSaveToggleUI(); updateBathButtonState();
         }
-
         function toggleMusic() {
             if (isMusicOn) { bgm.pause(); isMusicOn = false; }
-            else { bgm.play().then(() => { isMusicOn = true; updateMusicToggleUI(); }).catch(() => { isMusicOn = false; updateMusicToggleUI(); }); }
-            updateMusicToggleUI();
+            else bgm.play().then(function() { isMusicOn = true; updateMusicToggleUI(); }).catch(function() { isMusicOn = false; updateMusicToggleUI(); });
+            updateMusicToggleUI(); saveGame(true, true);
         }
-
         function updateMusicToggleUI() { musicToggle.classList.toggle('active', isMusicOn); }
-
         function toggleAutoSave() {
             autoSaveEnabled = !autoSaveEnabled;
             updateAutoSaveToggleUI();
-            if (autoSaveEnabled) { saveGame(true); autoSaveInterval = setInterval(() => saveGame(true), AUTO_SAVE_DELAY); }
-            else { clearInterval(autoSaveInterval); autoSaveInterval = null; }
+            if (autoSaveEnabled) saveGame(true, true);
+            saveGame(true, true);
         }
-
         function updateAutoSaveToggleUI() { autosaveToggle.classList.toggle('active', autoSaveEnabled); }
         settingsModal.addEventListener('click', function(e) { if (e.target === settingsModal) closeSettings(); });
         modManagerModal.addEventListener('click', function(e) { if (e.target === modManagerModal) closeModManager(); });
+        aboutModal.addEventListener('click', function(e) { if (e.target === aboutModal) closeAbout(); });
+        modMakerModal.addEventListener('click', function(e) { if (e.target === modMakerModal) closeModMaker(); });
 
-        function updateWhaleNameDisplay() {
-            whaleNameText.textContent = whaleName;
-        }
-
+        function updateWhaleNameDisplay() { whaleNameText.textContent = whaleName; }
         function initNameEditor() {
             whaleNameText.addEventListener('click', function() {
                 whaleNameText.classList.add('hidden');
@@ -667,8 +1166,7 @@
             });
             whaleNameInput.addEventListener('blur', function() { saveNameFromInput(); });
             whaleNameInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') whaleNameInput.blur();
-                if (e.key === 'Escape') whaleNameInput.blur();
+                if (e.key === 'Enter' || e.key === 'Escape') whaleNameInput.blur();
             });
             whaleNameInput.addEventListener('touchstart', function(e) { e.stopPropagation(); });
             whaleNameText.addEventListener('touchstart', function(e) {
@@ -681,41 +1179,44 @@
                 if (e.cancelable) e.preventDefault();
             });
         }
-
         function saveNameFromInput() {
             var newName = whaleNameInput.value.trim();
             if (newName && newName.length > 0) whaleName = newName;
             whaleNameInput.classList.remove('show');
             whaleNameText.classList.remove('hidden');
             updateWhaleNameDisplay();
-            saveGame(true);
+            applyNameColor();
+            saveGame(true, true);
         }
-
         function exitGame() {
-            if (confirm('确定要退出游戏吗？')) { try { window.close(); } catch (e) { alert('请手动关闭窗口'); } }
+            try { saveGame(true, true); } catch (e) {}
+            if (confirm(currentLang === 'en' ? 'Are you sure you want to exit?' : '确定要退出游戏吗？')) {
+                try { window.close(); } catch (e) { alert(currentLang === 'en' ? 'Please close manually' : '请手动关闭窗口'); }
+            }
         }
 
-        function saveGame(silent) {
+        function saveGame(silent, force) {
             var saveData = {
-                token: token,
-                coins: coins,
-                diamonds: diamonds,
-                whaleName: whaleName,
-                currentHat: currentHat,
-                hatType: hatType,
-                ownedHats: ownedHats,
-                foodInventory: foodInventory,
+                token: token, coins: coins, diamonds: diamonds,
+                whaleName: whaleName, whaleNameColor: whaleNameColor,
+                currentHat: currentHat, hatType: hatType,
+                ownedHats: ownedHats, foodInventory: foodInventory,
                 autoSaveEnabled: autoSaveEnabled,
-                freeAppleCount: freeAppleCount,
-                lastFreeDate: lastFreeDate,
-                cleanliness: cleanliness
+                freeAppleCount: freeAppleCount, lastFreeDate: lastFreeDate,
+                cleanliness: cleanliness, isMusicOn: isMusicOn, volume: bgm.volume
             };
-            localStorage.setItem('whaleGameSave', JSON.stringify(saveData));
-            if (!silent) alert('保存成功！');
+            var json;
+            try { json = JSON.stringify(saveData); } catch (e) { return; }
+            if (!force && json === _lastSavedJson) { if (!silent) alert(currentLang === 'en' ? 'Saved!' : '保存成功！'); return; }
+            try {
+                localStorage.removeItem(SAVE_KEY);
+                localStorage.setItem(SAVE_KEY, json);
+                _lastSavedJson = json;
+            } catch (e) { console.warn('Save failed', e); }
+            if (!silent) alert(currentLang === 'en' ? 'Saved!' : '保存成功！');
         }
-
         function loadGame() {
-            var saved = localStorage.getItem('whaleGameSave');
+            var saved = localStorage.getItem(SAVE_KEY) || localStorage.getItem(SAVE_KEY_LEGACY);
             if (saved) {
                 try {
                     var data = JSON.parse(saved);
@@ -723,11 +1224,12 @@
                     coins = data.coins !== undefined ? data.coins : 50;
                     diamonds = data.diamonds !== undefined ? data.diamonds : 0;
                     whaleName = data.whaleName || 'DeepSeek';
+                    whaleNameColor = normalizeHexColor(data.whaleNameColor) || '#ffffff';
                     currentHat = data.currentHat || '';
                     hatType = data.hatType || '';
                     ownedHats = data.ownedHats || {};
                     foodInventory = data.foodInventory || {};
-                    autoSaveEnabled = data.autoSaveEnabled || false;
+                    autoSaveEnabled = data.autoSaveEnabled !== undefined ? data.autoSaveEnabled : true;
                     freeAppleCount = data.freeAppleCount !== undefined ? data.freeAppleCount : 3;
                     lastFreeDate = data.lastFreeDate || '';
                     cleanliness = data.cleanliness !== undefined ? data.cleanliness : 100;
@@ -737,115 +1239,100 @@
                         var btn = hatButtons[i];
                         var emoji = btn.id.replace('hat-', '');
                         var map = { crown: '👑', tophat: '🎩', grad: '🎓', sun: '👒', cap: '🧢' };
-                        if (ownedHats[map[emoji]]) btn.innerHTML = (currentHat === map[emoji]) ? '已装扮' : '装扮';
+                        if (ownedHats[map[emoji]]) {
+                            btn.removeAttribute('data-i18n');
+                            btn.innerHTML = (currentHat === map[emoji]) ? (currentLang === 'en' ? 'Worn' : '已装扮') : (currentLang === 'en' ? 'Wear' : '装扮');
+                        }
                     }
-                } catch (e) { console.log('加载失败'); }
+                    if (typeof data.volume === 'number') bgm.volume = Math.max(0, Math.min(1, data.volume));
+                    if (data.isMusicOn) {
+                        isMusicOn = true;
+                        var playAttempt = bgm.play();
+                        if (playAttempt && playAttempt.catch) playAttempt.catch(function() {
+                            var tryPlay = function() {
+                                if (isMusicOn && bgm.paused) bgm.play().catch(function(){});
+                                document.removeEventListener('click', tryPlay);
+                                document.removeEventListener('touchstart', tryPlay);
+                            };
+                            document.addEventListener('click', tryPlay);
+                            document.addEventListener('touchstart', tryPlay);
+                        });
+                    }
+                    try { _lastSavedJson = JSON.stringify(data); } catch (e) {}
+                } catch (e) { console.log('Load failed'); }
             }
-            if (autoSaveEnabled) autoSaveInterval = setInterval(() => saveGame(true), AUTO_SAVE_DELAY);
             updateBathButtonState();
         }
-
         function checkFreeAppleReset() {
             var today = new Date().toDateString();
-            if (lastFreeDate !== today) {
-                freeAppleCount = 3;
-                lastFreeDate = today;
-                saveGame(true);
-            }
+            if (lastFreeDate !== today) { freeAppleCount = 3; lastFreeDate = today; saveGame(true, true); }
             document.getElementById('free-apple-count').textContent = freeAppleCount;
         }
-
         function claimFreeApple() {
             if (isLocked()) return;
             checkFreeAppleReset();
-            if (freeAppleCount <= 0) { alert('今日免费苹果已领完！'); return; }
+            if (freeAppleCount <= 0) { alert(currentLang === 'en' ? 'No free apples today!' : '今日免费苹果已领完！'); return; }
             freeAppleCount--;
             document.getElementById('free-apple-count').textContent = freeAppleCount;
             foodInventory['🍎'] = (foodInventory['🍎'] || 0) + 1;
-            renderFeedList();
-            updateUI();
-            saveGame(true);
-            lockButtons(800);
-            alert('获得了一个🍎！已放入食物背包');
+            renderFeedList(); updateUI();
+            saveGame(true, true); lockButtons(800);
+            alert(currentLang === 'en' ? 'Got an apple!' : '获得了一个🍎！已放入食物背包');
         }
-
         function toggleFoodShop() {
-            if (foodShop.classList.contains('active')) {
-                foodShop.classList.remove('active');
-                setAllGameButtonsDisabled(false);
-            } else {
-                foodShop.classList.add('active');
-                setAllGameButtonsDisabled(true);
-                checkFreeAppleReset();
-                renderFeedList();
-            }
+            if (foodShop.classList.contains('active')) { foodShop.classList.remove('active'); setAllGameButtonsDisabled(false); }
+            else { foodShop.classList.add('active'); setAllGameButtonsDisabled(true); checkFreeAppleReset(); renderFeedList(); }
         }
-
         function buyFood(emoji, price, currency, gain) {
             if (isLocked()) return;
-            if (currency === 'coins' && coins < price) { alert('金币不足！'); return; }
-            if (currency === 'diamonds' && diamonds < price) { alert('钻石不足！'); return; }
-            if (currency === 'coins') coins -= price;
-            else diamonds -= price;
+            if (currency === 'coins' && coins < price) { alert(currentLang === 'en' ? 'Not enough coins!' : '金币不足！'); return; }
+            if (currency === 'diamonds' && diamonds < price) { alert(currentLang === 'en' ? 'Not enough diamonds!' : '钻石不足！'); return; }
+            if (currency === 'coins') coins -= price; else diamonds -= price;
             foodInventory[emoji] = (foodInventory[emoji] || 0) + 1;
-            updateUI();
-            renderFeedList();
-            saveGame(true);
-            lockButtons(600);
-            alert('购买了 ' + emoji + '！已放入背包');
+            updateUI(); renderFeedList(); saveGame(true, true); lockButtons(600);
+            alert((currentLang === 'en' ? 'Bought ' : '购买了 ') + emoji);
         }
-
-        function openFeedPanel() {
-            renderFeedList();
-            feedPanel.classList.add('active');
-        }
-
+        function openFeedPanel() { renderFeedList(); feedPanel.classList.add('active'); }
         function closeFeedPanel() { feedPanel.classList.remove('active'); }
-
         function renderFeedList() {
-            var foods = {
-                '🍎': { name: '苹果', gain: 25 },
-                '🐟': { name: '鱼', gain: 30 },
-                '🍉': { name: '西瓜', gain: 35 },
-                '🍔': { name: '汉堡', gain: 45 },
-                '🍞': { name: '面包', gain: 15 },
-                '🍯': { name: '蜂蜜', gain: 50 },
-                '🍰': { name: '蛋糕', gain: 65 }
-            };
+            if (!feedList) return;
+            var foods = [
+                { emoji: '🍎', nameKey: 'food-apple', gain: 25 },
+                { emoji: '🐟', nameKey: 'food-fish-name', gain: 30 },
+                { emoji: '🍉', nameKey: 'food-watermelon-name', gain: 35 },
+                { emoji: '🍔', nameKey: 'food-burger-name', gain: 45 },
+                { emoji: '🍞', nameKey: 'food-bread-name', gain: 15 },
+                { emoji: '🍯', nameKey: 'food-honey-name', gain: 50 },
+                { emoji: '🍰', nameKey: 'food-cake-name', gain: 65 }
+            ];
             var html = '';
-            for (var emoji in foods) {
-                var count = foodInventory[emoji] || 0;
-                html += '<div class="feed-item"><div class="feed-info"><div class="feed-name">' + emoji + ' ' + foods[emoji].name + ' ×' + count + '</div><div class="feed-desc">恢复体力</div></div>';
-                if (count > 0) html += '<button onclick="feedWhale(\'' + emoji + '\',' + foods[emoji].gain + ')">喂食</button>';
-                else html += '<button disabled>无</button>';
+            for (var i = 0; i < foods.length; i++) {
+                var f = foods[i];
+                var count = foodInventory[f.emoji] || 0;
+                html += '<div class="feed-item"><div class="feed-info"><div class="feed-name">' + f.emoji + ' ' + t(f.nameKey) + ' ×' + count + '</div><div class="feed-desc">' + t('feed-restore') + '</div></div>';
+                if (count > 0) html += '<button onclick="feedWhale(\'' + f.emoji + '\',' + f.gain + ')">' + t('feed-btn') + '</button>';
+                else html += '<button disabled>' + t('feed-none') + '</button>';
                 html += '</div>';
             }
             feedList.innerHTML = html;
         }
-
         function feedWhale(emoji, gain) {
             if (isLocked()) return;
-            if (!foodInventory[emoji] || foodInventory[emoji] <= 0) { alert('没有这个食物！'); return; }
-            if (isSleeping) { alert('服务器繁忙，无法喂食！'); return; }
+            if (!foodInventory[emoji] || foodInventory[emoji] <= 0) { alert(currentLang === 'en' ? 'No such food!' : '没有这个食物！'); return; }
+            if (isSleeping) { alert(currentLang === 'en' ? 'Server busy!' : '服务器繁忙，无法喂食！'); return; }
             foodInventory[emoji]--;
             var finalGain = gain;
             if (hatType === 'cap') finalGain += 5;
             token = Math.min(100, token + finalGain);
-            updateUI();
-            checkState();
-            renderFeedList();
-            saveGame(true);
-            lockButtons(1000);
+            updateUI(); checkState(); renderFeedList(); saveGame(true, true); lockButtons(1000);
         }
-
         function pet() {
             if (isSleeping || isPetting || isBathing || isLocked()) return;
             lockButtons(10000);
             isPetting = true;
             whaleImg.src = getAssetUrl("5.png");
             petHand.style.display = 'block';
-            petHand.style.left = '50%';
-            petHand.style.top = '50%';
+            petHand.style.left = '50%'; petHand.style.top = '50%';
             var isDragging = false;
             petHand.onmousedown = function(e) { isDragging = true; moveHand(e.clientX, e.clientY); return false; };
             petHand.ontouchstart = function(e) { isDragging = true; var t = e.touches[0]; moveHand(t.clientX, t.clientY); return false; };
@@ -858,38 +1345,29 @@
                 var bonus = (hatType === 'tophat') ? 3 : 1;
                 if (hatType === 'grad') bonus += 5;
                 if (hatType === 'sun') coins += 1;
-                token += bonus;
-                coins += 1;
+                token += bonus; coins += 1;
                 if (token > 100) token = 100;
                 updateUI();
             }, 1000);
             clearTimeout(petTimer);
             petTimer = setTimeout(function() {
-                document.onmousemove = null;
-                document.ontouchmove = null;
-                document.onmouseup = null;
-                document.ontouchend = null;
+                document.onmousemove = null; document.ontouchmove = null;
+                document.onmouseup = null; document.ontouchend = null;
                 clearInterval(bonusTimer);
                 isPetting = false;
                 petHand.style.display = 'none';
-                checkState();
-                updateBathButtonState();
+                checkState(); updateBathButtonState();
             }, 10000);
         }
-
         function bathe() {
             if (isSleeping || isPetting || isBathing || isLocked()) return;
-            if (cleanliness >= 30) {
-                alert('虎鲸还不太脏，不需要洗澡~');
-                return;
-            }
+            if (cleanliness >= 30) { alert(currentLang === 'en' ? 'Not dirty yet~' : '虎鲸还不太脏，不需要洗澡~'); return; }
             lockButtons(10000);
             isBathing = true;
             whaleImg.src = getAssetUrl("8.png");
-            statusText.innerHTML = "状态：正在洗澡🧽...";
+            statusText.innerHTML = t('status-bathing');
             bathSponge.style.display = 'block';
-            bathSponge.style.left = '50%';
-            bathSponge.style.top = '50%';
+            bathSponge.style.left = '50%'; bathSponge.style.top = '50%';
             var isDragging = false;
             bathSponge.onmousedown = function(e) { isDragging = true; moveSponge(e.clientX, e.clientY); return false; };
             bathSponge.ontouchstart = function(e) { isDragging = true; var t = e.touches[0]; moveSponge(t.clientX, t.clientY); return false; };
@@ -900,92 +1378,65 @@
             function moveSponge(x, y) { bathSponge.style.left = x + 'px'; bathSponge.style.top = y + 'px'; }
             clearTimeout(bathTimer);
             bathTimer = setTimeout(function() {
-                document.onmousemove = null;
-                document.ontouchmove = null;
-                document.onmouseup = null;
-                document.ontouchend = null;
+                document.onmousemove = null; document.ontouchmove = null;
+                document.onmouseup = null; document.ontouchend = null;
                 bathSponge.style.display = 'none';
                 isBathing = false;
                 cleanliness = 100;
-                statusText.innerHTML = "状态：洗得干干净净！";
-                saveGame(true);
-                checkState();
-                updateBathButtonState();
-                setTimeout(() => checkState(), 1000);
+                statusText.innerHTML = t('status-clean');
+                saveGame(true, true); checkState(); updateBathButtonState();
+                setTimeout(function() { checkState(); }, 1000);
             }, 10000);
         }
-
         function startCleanlinessDecline() {
             clearInterval(cleanlinessTimer);
             cleanlinessTimer = setInterval(function() {
                 if (!isSleeping && !isBathing) {
                     cleanliness -= 5;
                     if (cleanliness < 0) cleanliness = 0;
-                    if (cleanliness <= 30) {
-                        checkState();
-                    }
+                    if (cleanliness <= 30) checkState();
                     updateBathButtonState();
-                    saveGame(true);
                 }
             }, 30000);
         }
-
         function lift() {
             if (isSleeping || token < 15 || isBathing || isLocked()) return;
             lockButtons(1500);
             token -= 15;
             whaleImg.src = getAssetUrl("1.png");
             updateUI();
-            statusText.innerHTML = "状态：正在疯狂举铁！";
-            setTimeout(() => checkState(), 1000);
+            statusText.innerHTML = t('status-exercising');
+            setTimeout(function() { checkState(); }, 1000);
         }
-
         function checkState() {
             updateUI();
             if (token <= 0) { startServerError(); return; }
-            if (cleanliness <= 30) {
-                isSad = false;
-                whaleImg.src = getAssetUrl("8.png");
-                statusText.innerHTML = "状态：脏兮兮的，需要洗澡！";
-            } else if (token <= 20) {
-                isSad = true;
-                whaleImg.src = getAssetUrl("4.png");
-                statusText.innerHTML = "状态：饿得伤心了...";
-            } else if (token <= 50) {
-                isSad = false;
-                whaleImg.src = getAssetUrl("3.png");
-                statusText.innerHTML = "状态：举铁太累，流汗了";
-            } else if (!isPetting && !isBathing) {
-                isSad = false;
-                whaleImg.src = getAssetUrl("1.gif");
-                statusText.innerHTML = "状态：正常开心";
-            }
+            if (cleanliness <= 30) { isSad = false; whaleImg.src = getAssetUrl("8.png"); statusText.innerHTML = t('status-dirty'); }
+            else if (token <= 20) { isSad = true; whaleImg.src = getAssetUrl("4.png"); statusText.innerHTML = t('status-hungry'); }
+            else if (token <= 50) { isSad = false; whaleImg.src = getAssetUrl("3.png"); statusText.innerHTML = t('status-tired'); }
+            else if (!isPetting && !isBathing) { isSad = false; whaleImg.src = getAssetUrl("1.gif"); statusText.innerHTML = t('status-happy'); }
             updateBathButtonState();
         }
-
         function startServerError() {
-            isSleeping = true;
-            token = 0;
+            isSleeping = true; token = 0;
             whaleImg.src = getAssetUrl("2.png");
-            statusText.innerHTML = "状态：服务器繁忙！";
+            statusText.innerHTML = t('status-server-busy');
             setAllGameButtonsDisabled(true);
             var timeLeft = 60;
-            countdownText.innerHTML = "重启冷却中：剩余 " + timeLeft + " 秒";
+            countdownText.innerHTML = t('status-server-restart') + timeLeft + t('status-server-restart-unit');
             clearInterval(sleepTimer);
             sleepTimer = setInterval(function() {
                 timeLeft--;
-                countdownText.innerHTML = "重启冷却中：剩余 " + timeLeft + " 秒";
+                countdownText.innerHTML = t('status-server-restart') + timeLeft + t('status-server-restart-unit');
                 if (timeLeft <= 0) {
                     clearInterval(sleepTimer);
-                    isSleeping = false;
-                    token = 100;
+                    isSleeping = false; token = 100;
                     countdownText.innerHTML = "";
                     setAllGameButtonsDisabled(false);
                     checkState();
                 }
             }, 1000);
         }
-
         function updateUI() {
             tokenBar.style.width = Math.max(0, token) + "%";
             tokenPercent.innerHTML = Math.round(token) + "%";
@@ -993,38 +1444,33 @@
             coinText.innerHTML = "🪙：" + coins;
             diamondText.innerHTML = "💎：" + diamonds;
         }
-
         function toggleShop() {
             if (shop.classList.contains('active')) { shop.classList.remove('active'); setAllGameButtonsDisabled(false); }
             else { shop.classList.add('active'); setAllGameButtonsDisabled(true); }
         }
-
         function buyOrWearHat(emoji, price, type, btn) {
             if (ownedHats[emoji]) {
                 if (currentHat === emoji) {
-                    currentHat = '';
-                    hatType = '';
-                    hatImg.innerHTML = '';
-                    btn.innerHTML = '装扮';
+                    currentHat = ''; hatType = ''; hatImg.innerHTML = '';
+                    btn.innerHTML = currentLang === 'en' ? 'Wear' : '装扮';
                 } else {
-                    currentHat = emoji;
-                    hatType = type;
-                    hatImg.innerHTML = emoji;
-                    btn.innerHTML = '已装扮';
+                    currentHat = emoji; hatType = type; hatImg.innerHTML = emoji;
+                    btn.innerHTML = currentLang === 'en' ? 'Worn' : '已装扮';
                     var allBtns = document.querySelectorAll('.hat-item button');
-                    for (var i = 0; i < allBtns.length; i++)
-                        if (allBtns[i] !== btn && allBtns[i].innerHTML === '已装扮') allBtns[i].innerHTML = '装扮';
+                    for (var i = 0; i < allBtns.length; i++) {
+                        var b = allBtns[i];
+                        if (b !== btn && (b.innerHTML === '已装扮' || b.innerHTML === 'Worn')) b.innerHTML = currentLang === 'en' ? 'Wear' : '装扮';
+                    }
                 }
-                startAutoConsume();
+                startAutoConsume(); saveGame(true, true);
             } else {
-                if (coins < price) { alert('金币不足！'); return; }
+                if (coins < price) { alert(currentLang === 'en' ? 'Not enough coins!' : '金币不足！'); return; }
                 coins -= price;
                 ownedHats[emoji] = true;
-                btn.innerHTML = '装扮';
-                updateUI();
+                btn.innerHTML = currentLang === 'en' ? 'Wear' : '装扮';
+                updateUI(); saveGame(true, true);
             }
         }
-
         function createBubble() {
             var bubble = document.createElement('div');
             bubble.className = 'bubble';
@@ -1035,67 +1481,54 @@
             var duration = Math.random() * 10 + 5;
             bubble.style.animationDuration = duration + 's';
             document.body.appendChild(bubble);
-            setTimeout(() => bubble.remove(), duration * 1000);
+            setTimeout(function() { bubble.remove(); }, duration * 1000);
         }
         setInterval(createBubble, 500);
-
         function startAutoConsume() {
             clearInterval(intervalTimer);
             intervalTimer = setInterval(function() {
                 if (!isSleeping && !isPetting && !isBathing) {
-                    var consume = (hatType === 'crown') ? 0.5 : 1;
-                    token -= consume;
+                    token -= (hatType === 'crown') ? 0.5 : 1;
                     checkState();
                 }
             }, 10000);
         }
-
         function openRunGame() {
             runGame.style.display = 'block';
             difficultySelect.style.display = 'block';
             runArea.innerHTML = '<div class="run-ground"></div>';
-            runUI.innerHTML = '钻石：0';
+            runUI.innerHTML = t('run-diamonds') + '0';
             gameOverScreen.classList.remove('show');
             reviveModal.classList.remove('show');
             jumpBtn.classList.remove('show');
-            isRunActive = false;
-            revivePending = false;
+            isRunActive = false; revivePending = false;
             setAllGameButtonsDisabled(true);
         }
-
         function closeRunGame() {
             runGame.style.display = 'none';
             isRunActive = false;
-            clearInterval(obstacleTimer);
-            clearInterval(enemyTimer);
+            clearInterval(obstacleTimer); clearInterval(enemyTimer);
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             document.onkeydown = null;
             jumpBtn.classList.remove('show');
             setAllGameButtonsDisabled(false);
         }
-
         function startRunGame(diff) {
             lastDifficulty = diff;
             difficultySelect.style.display = 'none';
             runArea.innerHTML = '<div class="run-ground"></div>';
-            runUI.innerHTML = '钻石：0';
+            runUI.innerHTML = t('run-diamonds') + '0';
             gameOverScreen.classList.remove('show');
             reviveModal.classList.remove('show');
             jumpBtn.classList.add('show');
-            currentDifficulty = diff;
-            runScore = 0;
-            isRunActive = true;
-            isInvincible = false;
-            revivePending = false;
+            currentDifficulty = diff; runScore = 0;
+            isRunActive = true; isInvincible = false; revivePending = false;
             runPlayer = document.createElement('img');
             runPlayer.src = getAssetUrl('7.png');
             runPlayer.className = 'run-player';
             runArea.appendChild(runPlayer);
-            runVelocity = 0;
-            runGravity = 0.8;
-            runIsJumping = false;
-            clearInterval(obstacleTimer);
-            clearInterval(enemyTimer);
+            runVelocity = 0; runGravity = 0.8; runIsJumping = false;
+            clearInterval(obstacleTimer); clearInterval(enemyTimer);
             if (diff === 'easy') { spikeSpeed = 4; obstacleTimer = setInterval(createObstacle, 2200); }
             else if (diff === 'normal') { spikeSpeed = 6; obstacleTimer = setInterval(createObstacle, 1600); }
             else { spikeSpeed = 8; obstacleTimer = setInterval(createObstacle, 1400); enemyTimer = setInterval(createChatGPTEnemy, 8000); }
@@ -1103,10 +1536,8 @@
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             animationFrameId = requestAnimationFrame(gameLoop);
         }
-
         function triggerJump() { if (isRunActive && !revivePending && !runIsJumping) { runVelocity = 12; runIsJumping = true; } }
         function handleJump(e) { if (e.keyCode !== 32) return; triggerJump(); e.preventDefault(); }
-
         function gameLoop() {
             if (!isRunActive) return;
             if (!revivePending) {
@@ -1124,26 +1555,38 @@
                     if (!isInvincible) {
                         var playerRect = runPlayer.getBoundingClientRect();
                         var objRect = obj.getBoundingClientRect();
-                        if (obj.className === 'spike') { var sx = objRect.width * 0.2, sy = objRect.height * 0.2; objRect = { left: objRect.left + sx, right: objRect.right - sx, top: objRect.top + sy, bottom: objRect.bottom - sy }; }
+                        if (obj.className === 'spike') {
+                            var sx = objRect.width * 0.2, sy = objRect.height * 0.2;
+                            objRect = { left: objRect.left + sx, right: objRect.right - sx, top: objRect.top + sy, bottom: objRect.bottom - sy };
+                        }
                         var collision = !(playerRect.right < objRect.left || playerRect.left > objRect.right || playerRect.bottom < objRect.top || playerRect.top > objRect.bottom);
                         if (collision) {
-                            if (obj.className === 'coin') { obj.remove(); runScore += 1; diamonds += 1; updateUI(); runUI.innerHTML = '钻石：' + diamonds; }
-                            else { if (diamonds >= 10) { revivePending = true; reviveDiamonds.textContent = diamonds; reviveModal.classList.add('show'); } else { gameOver(); } return; }
+                            if (obj.className === 'coin') {
+                                obj.remove(); runScore += 1; diamonds += 1; updateUI();
+                                runUI.innerHTML = t('run-diamonds') + diamonds;
+                            } else {
+                                if (diamonds >= 10) { revivePending = true; reviveDiamonds.textContent = diamonds; reviveModal.classList.add('show'); }
+                                else { gameOver(); } return;
+                            }
                         }
                     } else {
-                        if (obj.className === 'coin') { var playerRect2 = runPlayer.getBoundingClientRect(); var objRect2 = obj.getBoundingClientRect(); if (!(playerRect2.right < objRect2.left || playerRect2.left > objRect2.right || playerRect2.bottom < objRect2.top || playerRect2.top > objRect2.bottom)) { obj.remove(); runScore += 1; diamonds += 1; updateUI(); runUI.innerHTML = '钻石：' + diamonds; } }
+                        if (obj.className === 'coin') {
+                            var pR = runPlayer.getBoundingClientRect(), oR = obj.getBoundingClientRect();
+                            if (!(pR.right < oR.left || pR.left > oR.right || pR.bottom < oR.top || pR.top > oR.bottom)) {
+                                obj.remove(); runScore += 1; diamonds += 1; updateUI();
+                                runUI.innerHTML = t('run-diamonds') + diamonds;
+                            }
+                        }
                     }
                     if (left < -60) obj.remove();
                 }
             }
             animationFrameId = requestAnimationFrame(gameLoop);
         }
-
         function createObstacle() { if (Math.random() < 0.45) createSpike(); else createCoin(); }
         function createSpike() { var s = document.createElement('div'); s.className = 'spike'; s.style.left = (window.innerWidth + 20) + 'px'; s.style.bottom = '30px'; runArea.appendChild(s); }
         function createCoin() { var c = document.createElement('span'); c.className = 'coin'; c.innerHTML = '💎'; c.style.left = (window.innerWidth + 20) + 'px'; c.style.bottom = (Math.random() * 100 + 50) + 'px'; runArea.appendChild(c); }
         function createChatGPTEnemy() { var e = document.createElement('img'); e.src = getAssetUrl('6.png'); e.className = 'chatgpt-enemy'; e.style.left = (window.innerWidth + 20) + 'px'; e.style.bottom = '30px'; runArea.appendChild(e); }
-
         function useRevive() {
             if (diamonds < 10) return;
             diamonds -= 10;
@@ -1151,11 +1594,10 @@
             reviveModal.classList.remove('show');
             revivePending = false;
             isInvincible = true;
-            document.querySelectorAll('.spike, .chatgpt-enemy').forEach(el => el.remove());
+            document.querySelectorAll('.spike, .chatgpt-enemy').forEach(function(el) { el.remove(); });
             runPlayer.style.bottom = '30px';
-            runVelocity = 0;
-            runIsJumping = false;
-            setTimeout(() => { isInvincible = false; }, 2000);
+            runVelocity = 0; runIsJumping = false;
+            setTimeout(function() { isInvincible = false; }, 2000);
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             animationFrameId = requestAnimationFrame(gameLoop);
         }
@@ -1163,16 +1605,14 @@
         function restartRun() { startRunGame(lastDifficulty); }
         function gameOver() {
             isRunActive = false;
-            clearInterval(obstacleTimer);
-            clearInterval(enemyTimer);
+            clearInterval(obstacleTimer); clearInterval(enemyTimer);
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             document.onkeydown = null;
             jumpBtn.classList.remove('show');
-            finalScore.textContent = '获得钻石：' + runScore;
+            finalScore.textContent = t('game-over-diamonds') + runScore;
             gameOverScreen.classList.add('show');
-            saveGame(true);
+            saveGame(true, true);
         }
-
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 if (settingsModal.classList.contains('show')) closeSettings();
@@ -1181,14 +1621,13 @@
                 else if (feedPanel.classList.contains('active')) closeFeedPanel();
                 else if (runGame.style.display === 'block') closeRunGame();
                 else if (modManagerModal.classList.contains('show')) closeModManager();
+                else if (modMakerModal.classList.contains('show')) closeModMaker();
+                else if (aboutModal.classList.contains('show')) closeAbout();
+                else if (tutorialModal.classList.contains('show')) closeTutorial();
+                else if (editMode) toggleEditMode();
                 else if (!whaleNameInput.classList.contains('show')) saveNameFromInput();
             }
         });
-
-        updateMusicToggleUI();
-        updateAutoSaveToggleUI();
-        updateBathButtonState();
-        updateFullscreenBtn();
     </script>
 </body>
 </html>
